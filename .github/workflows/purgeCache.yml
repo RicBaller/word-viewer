@@ -1,0 +1,46 @@
+name: Purge Cache
+on:
+  push:
+    tags:
+      - '*'
+
+permissions: {}
+
+jobs:
+  purge:
+    name: Purge Cache
+    runs-on: ubuntu-latest
+    steps:
+      - name: Purge everything via Cloudflare API
+        env:
+          # One zone per line, formatted as "site=zone_id"
+          CLOUDFLARE_ZONES: ${{ vars.CLOUDFLARE_ZONES }}
+          CLOUDFLARE_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+        run: |
+          if [ -z "$CLOUDFLARE_ZONES" ] || [ -z "$CLOUDFLARE_TOKEN" ]; then
+            echo "::error::Missing CLOUDFLARE_ZONES variable or CLOUDFLARE_TOKEN secret"
+            exit 1
+          fi
+
+          failed=0
+          while IFS='=' read -r site zone; do
+            site=$(echo "$site" | tr -d '[:space:]')
+            zone=$(echo "$zone" | tr -d '[:space:]')
+            [ -z "$zone" ] && continue
+
+            response=$(curl -sS -X POST \
+              "https://api.cloudflare.com/client/v4/zones/${zone}/purge_cache" \
+              -H "Authorization: Bearer ${CLOUDFLARE_TOKEN}" \
+              -H "Content-Type: application/json" \
+              --data '{"purge_everything":true}')
+
+            if [ "$(echo "$response" | jq -r '.success')" = "true" ]; then
+              echo "::notice::Cache purged for ${site}"
+            else
+              echo "::error::Cache purge failed for ${site}"
+              echo "$response" | jq '.errors'
+              failed=1
+            fi
+          done <<< "$CLOUDFLARE_ZONES"
+
+          exit $failed
