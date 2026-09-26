@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Page not found – Word Viewer</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1><a href="/" class="home">Word Viewer</a></h1>
+    <div class="topbar-end">
+      <label class="lang">
+        <span data-i18n="language">Language</span>
+        <select id="languageSelect"></select>
+      </label>
+    </div>
+  </header>
+
+  <main class="not-found">
+    <h2 data-i18n="notFoundTitle">Page not found</h2>
+    <p data-i18n="notFoundText">This page does not exist. Open your Word document on the home page.</p>
+    <p><a class="button" href="/" data-i18n="backToApp">← Back to Word Viewer</a></p>
+  </main>
+
+  <footer class="footer">
+    <span id="credits"></span>
+    <span aria-hidden="true">·</span>
+    <a href="/changelog.html" data-i18n="changelog">Changelog</a>
+    <span aria-hidden="true">·</span>
+    <a href="https://github.com/RicBaller/word-viewer" target="_blank" rel="noopener" data-i18n="sourceCode">Source code</a>
+  </footer>
+
+  <script src="/i18n.js"></script>
+  <script src="/site.js"></script>
+  <script>initSite();</script>
+</body>
+</html>

@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Word Viewer – Open DOCX Files Online, Free</title>
+  <meta name="description" content="Open and read Word documents (.docx) in your browser. Free, no sign-up and no upload: your file stays on your device. Save as PDF, HTML, Markdown or plain text.">
+  <link rel="canonical" href="https://word-viewer.app/">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Word Viewer">
+  <meta property="og:title" content="Word Viewer – Open DOCX Files Online, Free">
+  <meta property="og:description" content="Open Word documents in your browser. Free, no sign-up, no upload.">
+  <meta property="og:url" content="https://word-viewer.app/">
+  <meta property="og:image" content="https://word-viewer.app/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Word Viewer: open Word documents in your browser">
+  <meta property="og:locale" content="en_US">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1c1f25" media="(prefers-color-scheme: dark)">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://word-viewer.app/#website",
+        "url": "https://word-viewer.app/",
+        "name": "Word Viewer",
+        "inLanguage": "en"
+      },
+      {
+        "@type": "WebApplication",
+        "@id": "https://word-viewer.app/#app",
+        "name": "Word Viewer",
+        "url": "https://word-viewer.app/",
+        "description": "Open and read Word documents (.docx) in your browser. Your file stays on your device.",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript",
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+        "featureList": [
+          "Open .docx files without uploading them",
+          "Headings, lists, tables, images, links and footnotes",
+          "Page view and reading view",
+          "Contents to jump to any heading",
+          "Find words in the whole document",
+          "Save as PDF, HTML, Markdown or plain text",
+          "Available in 17 languages"
+        ],
+        "screenshot": "https://word-viewer.app/og-image.png",
+        "author": { "@id": "https://word-viewer.app/#author" }
+      },
+      {
+        "@type": "Person",
+        "@id": "https://word-viewer.app/#author",
+        "name": "Rick Baller",
+        "url": "https://github.com/RicBaller"
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How do I open a Word file without Word?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Drag the .docx file onto this page or click “Choose file”. The document opens right away." }
+          },
+          {
+            "@type": "Question",
+            "name": "Is my file uploaded?",
+            "acceptedAnswer": { "@type": "Answer", "text": "No. Your file is read and processed only in your browser. No data is sent to a server." }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I convert a Word document to PDF?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Open the document and click “Print / PDF”. In the print window, choose “Save as PDF” as the printer." }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I open old .doc files?",
+            "acceptedAnswer": { "@type": "Answer", "text": "No. Only .docx files, the format Word uses since 2007. Open a .doc file in Word or LibreOffice and save it as .docx first." }
+          },
+          {
+            "@type": "Question",
+            "name": "Does the document look exactly like in Word?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Close, but not exactly. Text, headings, lists, tables, images, links and footnotes are shown. Pages break where the document has a page break; headers, footers and comments are not shown." }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>Word Viewer</h1>
+    <div class="topbar-end">
+    <div class="actions" id="actions" hidden>
+      <span id="fileInfo" class="muted"></span>
+      <div class="toggle" role="group" data-i18n-aria-label="view">
+        <button id="pageViewBtn" type="button" class="secondary" data-i18n="pageView">Page</button>
+        <button id="textViewBtn" type="button" class="secondary" data-i18n="textView">Text</button>
+      </div>
+      <div class="split-button">
+        <button id="printBtn" type="button" data-i18n="print">Print / PDF</button>
+        <button id="exportMenuBtn" type="button" aria-haspopup="menu" data-i18n-aria-label="otherFormats" aria-label="Other formats"><span aria-hidden="true">▾</span></button>
+      </div>
+      <button id="closeBtn" type="button" class="secondary" data-i18n="openOther">Other file</button>
+    </div>
+    <label class="lang">
+      <span data-i18n="language">Language</span>
+      <select id="languageSelect"></select>
+    </label>
+    </div>
+  </header>
+
+  <main>
+    <section id="dropzone" class="dropzone">
+      <p><strong data-i18n="dropTitle">Drag a Word file here</strong></p>
+      <p class="muted" data-i18n="or">or</p>
+      <div class="dropzone-actions">
+        <label class="button">
+          <span data-i18n="chooseFile">Choose file</span>
+          <input type="file" id="fileInput" accept=".docx,.docm,.dotx,.dotm,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden>
+        </label>
+        <button id="sampleBtn" type="button" class="secondary" data-i18n="trySample">Open sample document</button>
+      </div>
+      <p id="dropStatus" class="drop-status" role="status" hidden></p>
+    </section>
+
+    <section id="about" class="about">
+      <h2 data-i18n="aboutTitle">Open Word documents online</h2>
+      <p data-i18n="aboutIntro">Word Viewer opens .docx files directly in your browser. Read the document with its headings, lists, tables and images, jump through it with the contents, search for words and save it as PDF, web page, Markdown or plain text. Free, no account, nothing to install.</p>
+      <ul class="features">
+        <li><strong data-i18n="featPrivateTitle">Private</strong> <span data-i18n="featPrivate">Your file never leaves your device. Everything runs locally in your browser.</span></li>
+        <li><strong data-i18n="featLayoutTitle">Layout</strong> <span data-i18n="featLayout">Headings, lists, tables, images, links and footnotes are shown as in Word. Switch between page view and a plain reading view.</span></li>
+        <li><strong data-i18n="featNavTitle">Navigate</strong> <span data-i18n="featNav">Jump to any heading from the contents and find words in the whole document.</span></li>
+        <li><strong data-i18n="featExportTitle">Convert</strong> <span data-i18n="featExport">Save as PDF, web page, Markdown or plain text, or copy the text to paste it anywhere.</span></li>
+      </ul>
+
+      <h2 data-i18n="faqTitle">Frequently asked questions</h2>
+      <h3 data-i18n="faqOpenQ">How do I open a Word file without Word?</h3>
+      <p data-i18n="faqOpenA">Drag the .docx file onto this page or click “Choose file”. The document opens right away.</p>
+      <h3 data-i18n="faqUploadQ">Is my file uploaded?</h3>
+      <p data-i18n="faqUploadA">No. Your file is read and processed only in your browser. No data is sent to a server.</p>
+      <h3 data-i18n="faqPdfQ">How do I convert a Word document to PDF?</h3>
+      <p data-i18n="faqPdfA">Open the document and click “Print / PDF”. In the print window, choose “Save as PDF” as the printer.</p>
+      <h3 data-i18n="faqDocQ">Can I open old .doc files?</h3>
+      <p data-i18n="faqDocA">No. Only .docx files, the format Word uses since 2007. Open a .doc file in Word or LibreOffice and save it as .docx first.</p>
+      <h3 data-i18n="faqLayoutQ">Does the document look exactly like in Word?</h3>
+      <p data-i18n="faqLayoutA">Close, but not exactly. Text, headings, lists, tables, images, links and footnotes are shown. Pages break where the document has a page break; headers, footers and comments are not shown.</p>
+    </section>
+
+    <section id="viewer" class="viewer" hidden>
+      <div class="doc-tools">
+        <button id="contentsBtn" type="button" class="secondary" aria-controls="contents" data-i18n="contents">Contents</button>
+        <div class="find" role="search">
+          <input type="search" id="findInput" data-i18n-placeholder="find" data-i18n-aria-label="find" placeholder="Find in document" aria-label="Find in document">
+          <span id="findCount" class="muted" aria-live="polite"></span>
+          <button id="findPrevBtn" type="button" class="secondary icon" data-i18n-aria-label="findPrev" aria-label="Previous match"><span aria-hidden="true">↑</span></button>
+          <button id="findNextBtn" type="button" class="secondary icon" data-i18n-aria-label="findNext" aria-label="Next match"><span aria-hidden="true">↓</span></button>
+        </div>
+      </div>
+      <div class="viewer-body">
+        <nav id="contents" class="contents" data-i18n-aria-label="contents" aria-label="Contents" hidden>
+          <h2 data-i18n="contents">Contents</h2>
+          <ol id="contentsList"></ol>
+          <p id="contentsEmpty" class="muted" data-i18n="noHeadings" hidden>This document has no headings.</p>
+        </nav>
+        <div id="docHost" class="doc-host"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span id="credits"></span>
+    <span aria-hidden="true">·</span>
+    <a href="changelog.html" id="changelogLink" data-i18n="changelog">Changelog</a>
+    <span aria-hidden="true">·</span>
+    <a href="https://github.com/RicBaller/word-viewer" target="_blank" rel="noopener" data-i18n="sourceCode">Source code</a>
+  </footer>
+
+  <script src="i18n.js"></script>
+  <script src="site.js"></script>
+  <script src="docx.js"></script>
+  <script src="export.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
