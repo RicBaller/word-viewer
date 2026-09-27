@@ -772,10 +772,21 @@ class Renderer {
 
   table(tbl, rels) {
     const table = h('table');
+    // Column widths from the table grid, as in Word. They also keep the columns the same
+    // width when a table continues on the next page.
+    const cols = kids(child(tbl, 'tblGrid'), 'gridCol').map((c) => num(attr(c, 'w')) || 0);
+    if (cols.length && cols.every((w) => w > 0)) {
+      table.appendChild(h('colgroup', {}, ...cols.map((w) => h('col', { style: { width: `${w / TWIPS_PER_PX}px` } }))));
+      table.style.tableLayout = 'fixed';
+      table.style.width = `${cols.reduce((a, b) => a + b, 0) / TWIPS_PER_PX}px`;
+    }
     const tbody = table.appendChild(h('tbody'));
     const grid = []; // grid[row][column] = cell covering it, for vertical merges
     kids(tbl, 'tr').forEach((tr, r) => {
       const row = tbody.insertRow();
+      // Header rows repeat at the top of each page the table continues on.
+      const header = child(child(tr, 'trPr'), 'tblHeader');
+      if (header && on(header)) row.className = 'header-row';
       grid[r] = [];
       let col = num(val(child(child(tr, 'trPr'), 'gridBefore'))) || 0;
       const cells = [...tr.children].flatMap((c) => (c.localName === 'sdt' ? kids(child(c, 'sdtContent'), 'tc') : c.localName === 'tc' ? [c] : []));
