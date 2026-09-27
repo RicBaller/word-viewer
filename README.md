@@ -6,7 +6,7 @@ Live at [word-viewer.app](https://word-viewer.app/).
 
 ## Usage
 
-Run `npx wrangler dev` and open http://localhost:8787. That serves the files the same way as production, clean URLs included (`/changelog`). Any static web server works for the app itself, but links to `/changelog` then need `changelog.html`.
+Open `index.html` in a browser, or serve the folder with any static web server (`python3 -m http.server`, or `npx wrangler dev` to serve it the same way as production). Links between the pages point to the files themselves (`changelog.html`, `index.html`), so they work in all three. Only the sample document needs a web server: browsers do not let a page opened from disk load other files.
 
 - Drag a `.docx` file onto the page (or pick one with the button), or open the sample document.
 - The document shows headings, lists, tables (merged cells included), images, links, bookmarks, footnotes, endnotes and text boxes, with fonts, colors, alignment, indents and spacing. Headers, footers, comments and tracked deletions are not shown.
@@ -17,7 +17,7 @@ Run `npx wrangler dev` and open http://localhost:8787. That serves the files the
 - `Print / PDF` opens the print dialog with the page size and margins of the document. The arrow next to it saves a web page (`.html`, images embedded), Markdown (`.md`) or plain text (`.txt`). Markdown and plain text can also be copied to the clipboard. Exporters live in `export.js`.
 - Old `.doc` files and password-protected documents are not supported; the app says so.
 - The interface language follows your browser settings. Pick another language in the top bar; the choice is remembered. Supported: English, Dutch, German, French, Spanish, Italian, Portuguese, Polish, Turkish, Russian, Ukrainian, Arabic (right-to-left), Hindi, Indonesian, Chinese (Simplified), Japanese and Korean. Translations live in `i18n.js`.
-- The footer links to `/changelog` (`changelog.html`), the release history. Add new releases at the top of `CHANGELOG` in `changelog.js`.
+- The footer links to `changelog.html`, the release history. Add new releases at the top of `CHANGELOG` in `changelog.js`.
 
 ## How it works
 
@@ -37,7 +37,7 @@ Needs a current browser: Chrome/Edge 103+, Firefox 113+, Safari 16.4+. Find high
 
 The site runs on Cloudflare Workers as static assets only: `wrangler.jsonc` has no `main`, so no Worker code runs and asset requests are not billed as Worker requests. Deploy with `npx wrangler deploy`.
 
-- `wrangler.jsonc`: the repository root is the assets directory. `html_handling: auto-trailing-slash` serves `changelog.html` at `/changelog` (and redirects `/changelog.html` there). `not_found_handling: 404-page` answers unknown paths with `404.html` and status 404.
+- `wrangler.jsonc`: the repository root is the assets directory. `html_handling: auto-trailing-slash` serves `changelog.html` at `/changelog`, the canonical address in the sitemap; the links in the pages point to `changelog.html` and `index.html` so they also work from disk, and Cloudflare redirects those to `/changelog` and `/`. `not_found_handling: 404-page` answers unknown paths with `404.html` and status 404.
 - `.assetsignore`: files in the repository that are not published (`.git`, `.claude`, `.remember`, `README.md`, …). Add new non-site files here.
 - `_headers`: response headers. HTML, JS, CSS and the manifest keep Cloudflare's default `public, max-age=0, must-revalidate`: file names have no version, so browsers revalidate with the ETag (a 304) and never combine old and new scripts after a deploy. Icons and images are cached for a week, `sample.docx` for a day. Rules must not overlap on the same header, because Cloudflare joins the values of all matching rules.
 - Cloudflare caches static assets on its network itself and a deploy takes effect at once, so no Cache Rules are needed.
