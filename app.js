@@ -5,6 +5,7 @@ const els = {
   about: $('about'),
   fileInput: $('fileInput'),
   sampleBtn: $('sampleBtn'),
+  newDocBtn: $('newDocBtn'),
   dropStatus: $('dropStatus'),
   viewer: $('viewer'),
   docHost: $('docHost'),
@@ -60,16 +61,33 @@ function setStatus(key, isError = false) {
   els.dropStatus.textContent = key ? t(key) : '';
 }
 
+// Opens a document. True when it opened.
 async function openBuffer(name, getBuffer) {
   setStatus('opening');
   try {
     const loaded = await loadDocx(await getBuffer());
     setStatus(null);
     openDoc({ name, ...loaded });
+    return true;
   } catch (err) {
     console.error(err);
     setStatus(['invalidFile', 'legacyFile'].includes(err.message) ? err.message : 'readError', true);
+    return false;
   }
+}
+
+// A new, empty document, opened for editing with the caret in its first paragraph.
+async function newDocument() {
+  if (!confirmDiscard()) return;
+  const paper = defaultPaper(navigator.languages?.[0] || navigator.language || 'en');
+  // Straight into the edit view, without laying out pages first.
+  const previous = view;
+  view = 'edit';
+  if (!(await openBuffer(`${t('untitled')}.docx`, () => newDocx(paper).buffer))) {
+    view = previous;
+    return;
+  }
+  doc.element.focus();
 }
 
 function readFile(file) {
@@ -141,6 +159,8 @@ async function showDocument() {
     const pages = await current.paging;
     if (doc !== current) return;
     doc.pages = pages;
+    // Laying out took over the host; show what the view needs now, even if it changed meanwhile.
+    doc.shown = null;
   }
   const root = currentRoot();
   if (doc.shown !== root) {
@@ -565,6 +585,7 @@ els.fileInput.addEventListener('change', () => {
 });
 
 els.sampleBtn.addEventListener('click', openSample);
+els.newDocBtn.addEventListener('click', newDocument);
 
 els.closeBtn.addEventListener('click', () => {
   if (!confirmDiscard()) return;

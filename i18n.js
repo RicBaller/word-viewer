@@ -141,6 +141,8 @@ const TRANSLATIONS = {
     featEdit: 'Change text, headings, lists and tables, then download the result as a Word document. Everything you do not change stays as it was.',
     faqEditQ: 'Can I edit a Word document here?',
     faqEditA: 'Yes. Click “Edit”, make your changes and click “Download .docx”. Text, formatting, paragraph styles, lists, links and tables can be edited. Parts that are not shown, like headers and comments, stay in the file unchanged.',
+    newDocument: 'New document',
+    untitled: 'Untitled',
   },
   nl: {
     language: 'Taal',
@@ -259,6 +261,8 @@ const TRANSLATIONS = {
     featEdit: 'Pas tekst, koppen, lijsten en tabellen aan en download het resultaat als Word-document. Alles wat je niet wijzigt, blijft zoals het was.',
     faqEditQ: 'Kan ik hier een Word-document bewerken?',
     faqEditA: 'Ja. Klik op ‘Bewerken’, maak je wijzigingen en klik op ‘Download .docx’. Tekst, opmaak, alineastijlen, lijsten, koppelingen en tabellen zijn te bewerken. Onderdelen die niet worden getoond, zoals kopteksten en opmerkingen, blijven ongewijzigd in het bestand.',
+    newDocument: 'Nieuw document',
+    untitled: 'Naamloos',
   },
   de: {
     language: 'Sprache',
@@ -377,6 +381,8 @@ const TRANSLATIONS = {
     featEdit: 'Ändere Text, Überschriften, Listen und Tabellen und lade das Ergebnis als Word-Dokument herunter. Alles, was du nicht änderst, bleibt wie es war.',
     faqEditQ: 'Kann ich hier ein Word-Dokument bearbeiten?',
     faqEditA: 'Ja. Klicke auf „Bearbeiten“, nimm deine Änderungen vor und klicke auf „.docx herunterladen“. Text, Formatierung, Formatvorlagen, Listen, Links und Tabellen lassen sich bearbeiten. Teile, die nicht angezeigt werden, wie Kopf- und Fußzeilen und Kommentare, bleiben unverändert in der Datei.',
+    newDocument: 'Neues Dokument',
+    untitled: 'Unbenannt',
   },
   fr: {
     language: 'Langue',
@@ -495,6 +501,8 @@ const TRANSLATIONS = {
     featEdit: 'Modifiez le texte, les titres, les listes et les tableaux, puis téléchargez le résultat sous forme de document Word. Tout ce que vous ne modifiez pas reste tel quel.',
     faqEditQ: 'Puis-je modifier un document Word ici ?',
     faqEditA: 'Oui. Cliquez sur « Modifier », apportez vos modifications, puis cliquez sur « Télécharger le .docx ». Le texte, la mise en forme, les styles de paragraphe, les listes, les liens et les tableaux peuvent être modifiés. Les éléments qui ne sont pas affichés, comme les en-têtes et les commentaires, restent inchangés dans le fichier.',
+    newDocument: 'Nouveau document',
+    untitled: 'Sans titre',
   },
   es: {
     language: 'Idioma',
@@ -613,6 +621,8 @@ const TRANSLATIONS = {
     featEdit: 'Cambia texto, títulos, listas y tablas, y descarga el resultado como documento Word. Todo lo que no cambies se queda como estaba.',
     faqEditQ: '¿Puedo editar un documento Word aquí?',
     faqEditA: 'Sí. Haz clic en «Editar», haz tus cambios y haz clic en «Descargar .docx». Se pueden editar el texto, el formato, los estilos de párrafo, las listas, los enlaces y las tablas. Las partes que no se muestran, como los encabezados y los comentarios, permanecen sin cambios en el archivo.',
+    newDocument: 'Documento nuevo',
+    untitled: 'Sin título',
   },
   it: {
     language: 'Lingua',
@@ -731,6 +741,8 @@ const TRANSLATIONS = {
     featEdit: 'Modifica testo, titoli, elenchi e tabelle, poi scarica il risultato come documento Word. Tutto ciò che non modifichi resta com’era.',
     faqEditQ: 'Posso modificare un documento Word qui?',
     faqEditA: 'Sì. Fai clic su «Modifica», apporta le tue modifiche e fai clic su «Scarica .docx». Puoi modificare testo, formattazione, stili di paragrafo, elenchi, link e tabelle. Le parti non mostrate, come intestazioni e commenti, restano invariate nel file.',
+    newDocument: 'Nuovo documento',
+    untitled: 'Senza titolo',
   },
   pt: {
     language: 'Idioma',
@@ -849,6 +861,8 @@ const TRANSLATIONS = {
     featEdit: 'Altere texto, títulos, listas e tabelas e baixe o resultado como um documento Word. Tudo o que não for alterado permanece como estava.',
     faqEditQ: 'Posso editar um documento Word aqui?',
     faqEditA: 'Sim. Clique em "Editar", faça suas alterações e clique em "Baixar .docx". Texto, formatação, estilos de parágrafo, listas, links e tabelas podem ser editados. Partes que não são exibidas, como cabeçalhos e comentários, permanecem inalteradas no arquivo.',
+    newDocument: 'Novo documento',
+    untitled: 'Sem título',
   },
   pl: {
     language: 'Język',
@@ -967,6 +981,8 @@ const TRANSLATIONS = {
     featEdit: 'Zmieniaj tekst, nagłówki, listy i tabele, a następnie pobierz wynik jako dokument Word. Wszystko, czego nie zmienisz, pozostaje bez zmian.',
     faqEditQ: 'Czy mogę tutaj edytować dokument Word?',
     faqEditA: 'Tak. Kliknij „Edytuj”, wprowadź zmiany i kliknij „Pobierz .docx”. Można edytować tekst, formatowanie, style akapitu, listy, linki i tabele. Elementy, które nie są wyświetlane, takie jak nagłówki i komentarze, pozostają w pliku bez zmian.',
+    newDocument: 'Nowy dokument',
+    untitled: 'Bez tytułu',
   },
   tr: {
     language: 'Dil',
@@ -1085,6 +1101,8 @@ const TRANSLATIONS = {
     featEdit: 'Metni, başlıkları, listeleri ve tabloları değiştirin, ardından sonucu Word belgesi olarak indirin. Değiştirmediğiniz her şey olduğu gibi kalır.',
     faqEditQ: 'Burada bir Word belgesini düzenleyebilir miyim?',
     faqEditA: 'Evet. "Düzenle" seçeneğine tıklayın, değişikliklerinizi yapın ve ".docx\'i indir" seçeneğine tıklayın. Metin, biçimlendirme, paragraf stilleri, listeler, bağlantılar ve tablolar düzenlenebilir. Üst bilgiler ve yorumlar gibi gösterilmeyen bölümler dosyada değişmeden kalır.',
+    newDocument: 'Yeni belge',
+    untitled: 'Adsız',
   },
   ru: {
     language: 'Язык',
@@ -1203,6 +1221,8 @@ const TRANSLATIONS = {
     featEdit: 'Изменяйте текст, заголовки, списки и таблицы, а затем скачивайте результат в виде документа Word. Всё, что вы не изменяете, останется как было.',
     faqEditQ: 'Можно ли редактировать документ Word здесь?',
     faqEditA: 'Да. Нажмите «Редактировать», внесите изменения и нажмите «Скачать .docx». Можно редактировать текст, форматирование, стили абзацев, списки, ссылки и таблицы. Скрытые элементы, например колонтитулы и комментарии, остаются в файле без изменений.',
+    newDocument: 'Новый документ',
+    untitled: 'Без названия',
   },
   uk: {
     language: 'Мова',
@@ -1321,6 +1341,8 @@ const TRANSLATIONS = {
     featEdit: 'Змінюйте текст, заголовки, списки й таблиці, а потім завантажте результат як документ Word. Усе, що ви не змінюєте, залишається таким, як було.',
     faqEditQ: 'Чи можна редагувати документ Word тут?',
     faqEditA: 'Так. Натисніть «Редагувати», внесіть зміни та натисніть «Завантажити .docx». Можна редагувати текст, форматування, стилі абзаців, списки, посилання й таблиці. Частини, які не показано, наприклад колонтитули та коментарі, залишаються в файлі без змін.',
+    newDocument: 'Новий документ',
+    untitled: 'Без назви',
   },
   ar: {
     language: 'اللغة',
@@ -1439,6 +1461,8 @@ const TRANSLATIONS = {
     featEdit: 'غيّر النص والعناوين والقوائم والجداول، ثم نزّل النتيجة كمستند Word. كل ما لا تغيّره يبقى كما كان.',
     faqEditQ: 'هل يمكنني تحرير مستند Word هنا؟',
     faqEditA: 'نعم. انقر على «تحرير»، أجرِ تغييراتك، ثم انقر على «تنزيل .docx». يمكن تحرير النص والتنسيق وأنماط الفقرات والقوائم والروابط والجداول. الأجزاء التي لا تُعرض، مثل الرؤوس والتذييلات والتعليقات، تبقى دون تغيير في الملف.',
+    newDocument: 'مستند جديد',
+    untitled: 'بلا عنوان',
   },
   hi: {
     language: 'भाषा',
@@ -1557,6 +1581,8 @@ const TRANSLATIONS = {
     featEdit: 'टेक्स्ट, हेडिंग, सूचियों और तालिकाओं में बदलाव करें, फिर परिणाम को Word दस्तावेज़ के रूप में डाउनलोड करें। जो कुछ भी आप नहीं बदलते, वह वैसा ही रहता है जैसा था।',
     faqEditQ: 'क्या मैं यहाँ Word दस्तावेज़ को संपादित कर सकता हूँ?',
     faqEditA: 'हाँ। “संपादित करें” पर क्लिक करें, अपने बदलाव करें और “.docx डाउनलोड करें” पर क्लिक करें। टेक्स्ट, फ़ॉर्मेटिंग, अनुच्छेद शैलियाँ, सूचियाँ, लिंक और तालिकाएँ संपादित की जा सकती हैं। जो हिस्से नहीं दिखाए जाते, जैसे हेडर और टिप्पणियाँ, वे फ़ाइल में बिना बदलाव के रहते हैं।',
+    newDocument: 'नया दस्तावेज़',
+    untitled: 'शीर्षकहीन',
   },
   id: {
     language: 'Bahasa',
@@ -1675,6 +1701,8 @@ const TRANSLATIONS = {
     featEdit: 'Ubah teks, judul, daftar, dan tabel, lalu unduh hasilnya sebagai dokumen Word. Semua yang tidak Anda ubah tetap seperti semula.',
     faqEditQ: 'Bisakah saya mengedit dokumen Word di sini?',
     faqEditA: 'Bisa. Klik “Edit”, buat perubahan Anda, lalu klik “Unduh .docx”. Teks, format, gaya paragraf, daftar, tautan, dan tabel dapat diedit. Bagian yang tidak ditampilkan, seperti header dan komentar, tetap tidak berubah di dalam file.',
+    newDocument: 'Dokumen baru',
+    untitled: 'Tanpa judul',
   },
   zh: {
     language: '语言',
@@ -1793,6 +1821,8 @@ const TRANSLATIONS = {
     featEdit: '修改文字、标题、列表和表格，然后将结果下载为 Word 文档。你未修改的内容保持不变。',
     faqEditQ: '可以在这里编辑 Word 文档吗？',
     faqEditA: '可以。点击“编辑”，进行修改，然后点击“下载 .docx”。可以编辑文字、格式、段落样式、列表、链接和表格。未显示的部分，例如页眉和批注，会在文件中保持不变。',
+    newDocument: '新建文档',
+    untitled: '未命名',
   },
   ja: {
     language: '言語',
@@ -1911,6 +1941,8 @@ const TRANSLATIONS = {
     featEdit: 'テキスト、見出し、リスト、表を変更し、結果を Word 文書としてダウンロードできます。変更しない部分はそのまま残ります。',
     faqEditQ: 'ここで Word 文書を編集できますか？',
     faqEditA: 'はい。「編集」をクリックして変更を加え、「.docx をダウンロード」をクリックします。テキスト、書式、段落スタイル、リスト、リンク、表を編集できます。表示されない部分、たとえばヘッダーやコメントは、ファイル内でそのまま変更されません。',
+    newDocument: '新規文書',
+    untitled: '無題',
   },
   ko: {
     language: '언어',
@@ -2029,6 +2061,8 @@ const TRANSLATIONS = {
     featEdit: '텍스트, 제목, 목록, 표를 변경한 다음 결과를 Word 문서로 다운로드하세요. 변경하지 않은 부분은 그대로 유지됩니다.',
     faqEditQ: '여기에서 Word 문서를 편집할 수 있나요?',
     faqEditA: '네. ‘편집’을 클릭하고 변경한 다음 ‘.docx 다운로드’를 클릭하세요. 텍스트, 서식, 문단 스타일, 목록, 링크, 표를 편집할 수 있습니다. 머리글, 댓글처럼 표시되지 않는 부분은 파일에서 변경되지 않은 채로 유지됩니다.',
+    newDocument: '새 문서',
+    untitled: '제목 없음',
   },
 };
 

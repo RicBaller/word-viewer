@@ -561,6 +561,7 @@ function ensureStyle(model, key) {
   let id = def.id;
   while ([...doc.getElementsByTagNameNS(NS.w, 'style')].some((s) => attr(s, 'styleId') === id)) id += 'X';
   let xml = def.xml;
+  if (!model.parts.theme) xml = xml.replace(/w:asciiTheme="majorHAnsi" w:hAnsiTheme="majorHAnsi"/g, 'w:ascii="Aptos Display" w:hAnsi="Aptos Display" w:eastAsia="Aptos Display" w:cs="Aptos Display"');
   // Styles are based on Normal, whatever it is called here.
   if (xml.includes('w:val="Normal"')) {
     const normal = key === 'Normal' ? null : ensureStyle(model, 'Normal');
@@ -889,6 +890,69 @@ function deleteColumn(model, tc) {
 function deleteTable(model, tbl) {
   tbl.remove();
   tidy(model);
+}
+
+// ---------- New document ----------
+
+// Paper sizes in twips. Letter where Word uses it by default, A4 elsewhere.
+const PAPER = { a4: [11906, 16838], letter: [12240, 15840] };
+const LETTER_REGIONS = ['US', 'CA', 'MX', 'PH', 'PR', 'CL', 'CO', 'VE', 'GT', 'PA'];
+
+function defaultPaper(locale) {
+  try {
+    return LETTER_REGIONS.includes(new Intl.Locale(locale).maximize().region) ? 'letter' : 'a4';
+  } catch {
+    return 'a4';
+  }
+}
+
+// An empty .docx with one paragraph, the standard font and margins of Word. Styles such as
+// headings are added when they are first used.
+function newDocx(paper = 'a4') {
+  const [w, h] = PAPER[paper];
+  const head = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n';
+  const W_NS = `xmlns:w="${NS.w}" xmlns:r="${NS.r}"`;
+  const now = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+  const files = {
+    '[Content_Types].xml':
+      `${head}<Types xmlns="${CT_NS}">` +
+      '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+      '<Default Extension="xml" ContentType="application/xml"/>' +
+      '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+      '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
+      '<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>' +
+      '</Types>',
+    '_rels/.rels':
+      `${head}<Relationships xmlns="${NS.rel}">` +
+      `<Relationship Id="rId1" Type="${REL_TYPE}/officeDocument" Target="word/document.xml"/>` +
+      '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>' +
+      '</Relationships>',
+    'docProps/core.xml':
+      `${head}<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">` +
+      `<dcterms:created xsi:type="dcterms:W3CDTF">${now}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${now}</dcterms:modified>` +
+      '</cp:coreProperties>',
+    'word/_rels/document.xml.rels':
+      `${head}<Relationships xmlns="${NS.rel}"><Relationship Id="rId1" Type="${REL_TYPE}/styles" Target="styles.xml"/></Relationships>`,
+    'word/document.xml':
+      `${head}<w:document ${W_NS}><w:body><w:p/>` +
+      `<w:sectPr><w:pgSz w:w="${w}" w:h="${h}"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/><w:cols w:space="720"/><w:docGrid w:linePitch="360"/></w:sectPr>` +
+      '</w:body></w:document>',
+    'word/styles.xml':
+      `${head}<w:styles ${W_NS}>` +
+      '<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Aptos" w:hAnsi="Aptos" w:eastAsia="Aptos" w:cs="Aptos"/><w:kern w:val="2"/><w:sz w:val="24"/><w:szCs w:val="24"/><w:lang w:val="en-US" w:eastAsia="en-US" w:bidi="ar-SA"/></w:rPr></w:rPrDefault>' +
+      '<w:pPrDefault><w:pPr><w:spacing w:after="160" w:line="278" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>' +
+      '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>' +
+      '<w:style w:type="character" w:default="1" w:styleId="DefaultParagraphFont"><w:name w:val="Default Paragraph Font"/><w:uiPriority w:val="1"/><w:semiHidden/><w:unhideWhenUsed/></w:style>' +
+      '<w:style w:type="table" w:default="1" w:styleId="TableNormal"><w:name w:val="Normal Table"/><w:uiPriority w:val="99"/><w:semiHidden/><w:unhideWhenUsed/><w:tblPr><w:tblInd w:w="0" w:type="dxa"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr></w:style>' +
+      '</w:styles>',
+  };
+  const encoder = new TextEncoder();
+  return writeZip(
+    Object.entries(files).map(([path, xml]) => {
+      const data = encoder.encode(xml);
+      return { path, method: 0, crc: crc32(data), originalSize: data.length, data };
+    }),
+  );
 }
 
 // ---------- Saving ----------
