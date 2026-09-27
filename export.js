@@ -36,7 +36,7 @@ function toMarkdown(root) {
   const inline = (nodes, br) =>
     nodes
       .map((node) => {
-        if (node.nodeType === Node.TEXT_NODE) return escape(node.data);
+        if (node.nodeType === Node.TEXT_NODE) return escape(node.data.replace(/\u200b/g, ''));
         if (node.nodeType !== Node.ELEMENT_NODE) return '';
         const inner = () => inline([...node.childNodes], br);
         switch (node.tagName) {
@@ -139,7 +139,7 @@ function toText(root) {
   const inline = (nodes) =>
     nodes
       .map((node) => {
-        if (node.nodeType === Node.TEXT_NODE) return node.data.replace(/ /g, ' ');
+        if (node.nodeType === Node.TEXT_NODE) return node.data.replace(/\u00a0/g, ' ').replace(/\u200b/g, '');
         if (node.nodeType !== Node.ELEMENT_NODE) return '';
         if (node.tagName === 'BR') return '\n';
         if (node.tagName === 'IMG' || node.tagName === 'HR') return '';
@@ -258,7 +258,13 @@ function toHTML(root, title, images, lang) {
     const image = byUrl.get(img.getAttribute('src'));
     if (image) img.src = `data:${image.mime};base64,${toBase64(image.bytes)}`;
   });
-  clone.querySelectorAll('[data-i18n]').forEach((el) => el.removeAttribute('data-i18n'));
+  // Leave out what only the viewer and editor use.
+  for (const el of [clone, ...clone.querySelectorAll('*')]) {
+    for (const name of ['data-i18n', 'data-x', 'data-r', 'data-rid', 'data-field', 'contenteditable', 'spellcheck']) el.removeAttribute(name);
+  }
+  clone.classList.remove('editing');
+  const walker = document.createTreeWalker(clone, NodeFilter.SHOW_TEXT);
+  while (walker.nextNode()) walker.currentNode.data = walker.currentNode.data.replace(/\u200b/g, '');
   const escape = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   return (
     `<!doctype html>\n<html lang="${lang}">\n<head>\n<meta charset="utf-8">\n` +
