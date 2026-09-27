@@ -258,14 +258,10 @@ main:has(> .viewer:not([hidden])) { padding: 0; background: var(--desk); }
 .doc {
   color-scheme: light;
   position: relative;
-  width: var(--page-width, 816px);
-  max-width: 100%;
-  min-height: var(--page-height, 1056px);
+  box-sizing: border-box;
   margin: 0 auto;
-  padding: var(--page-top, 96px) var(--page-right, 96px) var(--page-bottom, 96px) var(--page-left, 96px);
   background: #fff;
   color: #000;
-  box-shadow: var(--page-shadow);
   line-height: 1.15;
   white-space: pre-wrap;
   tab-size: 4;
@@ -304,39 +300,38 @@ main:has(> .viewer:not([hidden])) { padding: 0; background: var(--desk); }
 .doc .notes hr { width: 33%; margin: 0 0 8px; border: 0; border-top: 1px solid #999; }
 .doc .noteback { text-decoration: none; }
 
-/* A page break ends the sheet: a strip of desk between two pages, as wide as the paper. */
-.doc .page-break {
-  display: block;
-  height: 24px;
-  margin: var(--page-bottom, 96px) calc(-1 * var(--page-right, 96px)) var(--page-top, 96px) calc(-1 * var(--page-left, 96px));
-  border: 0;
-  background: var(--desk);
-  box-shadow: inset 0 6px 6px -6px rgba(0, 0, 0, .2), inset 0 -6px 6px -6px rgba(0, 0, 0, .2);
-}
-.doc li .page-break, .doc td .page-break, .doc .textbox .page-break { display: none; }
+/* Page breaks are handled by the page layout (paginate.js); in the text view they are not shown. */
+.doc .page-break { display: none; }
 
-/* Narrow screens: paper margins would squeeze the text, so they shrink. */
-@media (max-width: 899px) {
-  .doc { padding: 24px 20px; min-height: 0; }
-  .doc .page-break { margin: 24px -20px; }
+/* Page view: sheets with the paper size and margins of the document. On narrow screens the
+   whole stack is scaled down (zoom, set in app.js), so the layout of each page stays the same. */
+.pages { width: max-content; margin: 0 auto; }
+.doc.page {
+  width: var(--page-width, 816px);
+  min-height: var(--page-height, 1056px);
+  margin-bottom: 24px;
+  padding: var(--page-top, 96px) var(--page-right, 96px) var(--page-bottom, 96px) var(--page-left, 96px);
+  box-shadow: var(--page-shadow);
 }
+/* Block formatting context: the margins of the first paragraph stay inside the text area.
+   Space below the last block on a page is dropped, as in Word. */
+.page-body { display: flow-root; }
+.page-body > :last-child { margin-bottom: 0 !important; }
+/* The rest of a split list item continues without a second bullet or number. */
+.doc li.continued { list-style-type: none; }
 
 /* Text view: no paper, the text reflows at a comfortable width. */
-.text-view .doc {
-  width: auto;
+.doc:not(.page) {
   max-width: 760px;
-  min-height: 0;
   padding: 40px 48px;
-  box-shadow: none;
   border-radius: 8px;
   line-height: 1.5;
 }
-.text-view .doc .page-break { display: none; }
 /* Paragraphs carry the line spacing of the document inline; reading view uses its own. */
-.text-view .doc :is(p, li, td) { line-height: 1.5 !important; }
+.doc:not(.page) :is(p, li, td) { line-height: 1.5 !important; }
 
 @media (max-width: 899px) {
-  .text-view .doc { padding: 24px 20px; }
+  .doc:not(.page) { padding: 24px 20px; }
 }
 
 /* ---------- Print ---------- */
@@ -346,17 +341,13 @@ main:has(> .viewer:not([hidden])) { padding: 0; background: var(--desk); }
   .topbar, .footer, .doc-tools, .contents, .toast, .menu { display: none !important; }
   /* Block layout: browsers ignore forced page breaks inside flex items. */
   main, .viewer-body { display: block; padding: 0 !important; background: none !important; }
-  .doc, .text-view .doc {
-    width: auto;
-    max-width: none;
-    min-height: 0;
-    padding: 0;
-    box-shadow: none;
-    border-radius: 0;
-    print-color-adjust: exact;
-    -webkit-print-color-adjust: exact;
-  }
-  .doc .page-break { height: 0; margin: 0; background: none; box-shadow: none; break-after: page; }
+  .doc { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  /* Each sheet on screen is one printed page; @page has no margin, the sheet has them. */
+  .pages { zoom: 1 !important; }
+  /* A little under the paper height, so rounding never pushes a sheet onto two printed pages. */
+  .doc.page { min-height: calc(var(--page-height, 1056px) - 2px); margin: 0; box-shadow: none; }
+  .doc.page + .doc.page { break-before: page; }
+  .doc:not(.page) { max-width: none; padding: 0; border-radius: 0; }
   ::highlight(find), ::highlight(find-current) { background: none; }
 }
 
