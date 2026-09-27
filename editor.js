@@ -621,8 +621,11 @@ function splitParagraph() {
     div.append(r.cloneContents());
     return hasContent(div);
   };
-  if (!own(block)) block.insertBefore(document.createElement('br'), [...block.children].find((c) => c.tagName === 'UL' || c.tagName === 'OL') || null);
-  if (!own(next)) next.prepend(document.createElement('br'));
+  // Before a nested list a line break gives no place for the caret in Chrome; a zero-width
+  // space does (it is left out when saving).
+  const holder = (el) => ([...el.children].some((c) => c.tagName === 'UL' || c.tagName === 'OL') ? document.createTextNode('\u200b') : document.createElement('br'));
+  if (!own(block)) block.insertBefore(holder(block), [...block.children].find((c) => c.tagName === 'UL' || c.tagName === 'OL') || null);
+  if (!own(next)) next.prepend(holder(next));
   block.after(next);
   const p = pointAt(next, 0);
   getSelection().collapse(p.node, p.offset);
@@ -941,6 +944,12 @@ function initToolbar(bar) {
       }
       case 'bullets':
         return command(() => toggleList(model(), selectedParagraphs(), 'bullet'));
+      case 'bulletStyle':
+      case 'numberingStyle': {
+        const kind = cmd === 'bulletStyle' ? 'bullet' : 'number';
+        const styles = kind === 'bullet' ? BULLET_STYLES : NUMBER_STYLES;
+        return toggleMenu(btn, styles.map(([label, format, text]) => [label, () => (restore(), command(() => setListFormat(model(), selectedParagraphs(), kind, format, text)))]));
+      }
       case 'numbering':
         return command(() => toggleList(model(), selectedParagraphs(), 'number'));
       case 'outdent':

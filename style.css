@@ -280,6 +280,8 @@ main:has(> .viewer:not([hidden])) { padding: 0; background: var(--desk); }
 .doc h4, .doc h5, .doc h6 { font-size: 1em; font-weight: normal; }
 .doc h1.doc-title { font-size: 28pt; }
 .doc ul, .doc ol { padding-inline-start: 2em; }
+/* Numbers like 1) or (a): browsers only have the period built in. */
+.doc ol.custom-number > li::marker { content: var(--num-before) counter(list-item, var(--num-style)) var(--num-after) "  "; }
 .doc a { color: #0563c1; }
 .doc a.bookmark { color: inherit; }
 .doc img { max-width: 100%; height: auto; vertical-align: bottom; }
@@ -407,6 +409,7 @@ main:has(> .viewer:not([hidden])) { padding: 0; background: var(--desk); }
 .color-tool span { border-bottom: 3px solid var(--color, #000); line-height: 1.1; box-shadow: 0 1px 0 var(--border); }
 .color-tool input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 .save-docx { margin-inline-start: auto; }
+.edit-tools button.list-style { min-width: 16px; padding: 0 2px; margin-inline-start: -2px; font-size: 11px; }
 
 /* Small screens: the toolbar is one row that scrolls sideways, so it does not cover the text. */
 @media (max-width: 899px) {

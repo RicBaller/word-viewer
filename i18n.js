@@ -143,6 +143,8 @@ const TRANSLATIONS = {
     faqEditA: 'Yes. Click “Edit”, make your changes and click “Download .docx”. Text, formatting, paragraph styles, lists, links and tables can be edited. Parts that are not shown, like headers and comments, stay in the file unchanged.',
     newDocument: 'New document',
     untitled: 'Untitled',
+    bulletStyle: 'Bullet style',
+    numberingStyle: 'Numbering style',
   },
   nl: {
     language: 'Taal',
@@ -263,6 +265,8 @@ const TRANSLATIONS = {
     faqEditA: 'Ja. Klik op ‘Bewerken’, maak je wijzigingen en klik op ‘Download .docx’. Tekst, opmaak, alineastijlen, lijsten, koppelingen en tabellen zijn te bewerken. Onderdelen die niet worden getoond, zoals kopteksten en opmerkingen, blijven ongewijzigd in het bestand.',
     newDocument: 'Nieuw document',
     untitled: 'Naamloos',
+    bulletStyle: 'Stijl opsommingsteken',
+    numberingStyle: 'Stijl nummering',
   },
   de: {
     language: 'Sprache',
@@ -383,6 +387,8 @@ const TRANSLATIONS = {
     faqEditA: 'Ja. Klicke auf „Bearbeiten“, nimm deine Änderungen vor und klicke auf „.docx herunterladen“. Text, Formatierung, Formatvorlagen, Listen, Links und Tabellen lassen sich bearbeiten. Teile, die nicht angezeigt werden, wie Kopf- und Fußzeilen und Kommentare, bleiben unverändert in der Datei.',
     newDocument: 'Neues Dokument',
     untitled: 'Unbenannt',
+    bulletStyle: 'Aufzählungszeichen wählen',
+    numberingStyle: 'Nummerierungsformat',
   },
   fr: {
     language: 'Langue',
@@ -503,6 +509,8 @@ const TRANSLATIONS = {
     faqEditA: 'Oui. Cliquez sur « Modifier », apportez vos modifications, puis cliquez sur « Télécharger le .docx ». Le texte, la mise en forme, les styles de paragraphe, les listes, les liens et les tableaux peuvent être modifiés. Les éléments qui ne sont pas affichés, comme les en-têtes et les commentaires, restent inchangés dans le fichier.',
     newDocument: 'Nouveau document',
     untitled: 'Sans titre',
+    bulletStyle: 'Style de puce',
+    numberingStyle: 'Format de numérotation',
   },
   es: {
     language: 'Idioma',
@@ -623,6 +631,8 @@ const TRANSLATIONS = {
     faqEditA: 'Sí. Haz clic en «Editar», haz tus cambios y haz clic en «Descargar .docx». Se pueden editar el texto, el formato, los estilos de párrafo, las listas, los enlaces y las tablas. Las partes que no se muestran, como los encabezados y los comentarios, permanecen sin cambios en el archivo.',
     newDocument: 'Documento nuevo',
     untitled: 'Sin título',
+    bulletStyle: 'Estilo de viñeta',
+    numberingStyle: 'Formato de numeración',
   },
   it: {
     language: 'Lingua',
@@ -743,6 +753,8 @@ const TRANSLATIONS = {
     faqEditA: 'Sì. Fai clic su «Modifica», apporta le tue modifiche e fai clic su «Scarica .docx». Puoi modificare testo, formattazione, stili di paragrafo, elenchi, link e tabelle. Le parti non mostrate, come intestazioni e commenti, restano invariate nel file.',
     newDocument: 'Nuovo documento',
     untitled: 'Senza titolo',
+    bulletStyle: 'Stile elenco puntato',
+    numberingStyle: 'Formato numerazione',
   },
   pt: {
     language: 'Idioma',
@@ -863,6 +875,8 @@ const TRANSLATIONS = {
     faqEditA: 'Sim. Clique em "Editar", faça suas alterações e clique em "Baixar .docx". Texto, formatação, estilos de parágrafo, listas, links e tabelas podem ser editados. Partes que não são exibidas, como cabeçalhos e comentários, permanecem inalteradas no arquivo.',
     newDocument: 'Novo documento',
     untitled: 'Sem título',
+    bulletStyle: 'Estilo de marcador',
+    numberingStyle: 'Formato de numeração',
   },
   pl: {
     language: 'Język',
@@ -983,6 +997,8 @@ const TRANSLATIONS = {
     faqEditA: 'Tak. Kliknij „Edytuj”, wprowadź zmiany i kliknij „Pobierz .docx”. Można edytować tekst, formatowanie, style akapitu, listy, linki i tabele. Elementy, które nie są wyświetlane, takie jak nagłówki i komentarze, pozostają w pliku bez zmian.',
     newDocument: 'Nowy dokument',
     untitled: 'Bez tytułu',
+    bulletStyle: 'Styl punktora',
+    numberingStyle: 'Format numeracji',
   },
   tr: {
     language: 'Dil',
@@ -1103,6 +1119,8 @@ const TRANSLATIONS = {
     faqEditA: 'Evet. "Düzenle" seçeneğine tıklayın, değişikliklerinizi yapın ve ".docx\'i indir" seçeneğine tıklayın. Metin, biçimlendirme, paragraf stilleri, listeler, bağlantılar ve tablolar düzenlenebilir. Üst bilgiler ve yorumlar gibi gösterilmeyen bölümler dosyada değişmeden kalır.',
     newDocument: 'Yeni belge',
     untitled: 'Adsız',
+    bulletStyle: 'Madde işareti stili',
+    numberingStyle: 'Numaralandırma biçimi',
   },
   ru: {
     language: 'Язык',
@@ -1223,6 +1241,8 @@ const TRANSLATIONS = {
     faqEditA: 'Да. Нажмите «Редактировать», внесите изменения и нажмите «Скачать .docx». Можно редактировать текст, форматирование, стили абзацев, списки, ссылки и таблицы. Скрытые элементы, например колонтитулы и комментарии, остаются в файле без изменений.',
     newDocument: 'Новый документ',
     untitled: 'Без названия',
+    bulletStyle: 'Стиль маркера',
+    numberingStyle: 'Формат нумерации',
   },
   uk: {
     language: 'Мова',
@@ -1343,6 +1363,8 @@ const TRANSLATIONS = {
     faqEditA: 'Так. Натисніть «Редагувати», внесіть зміни та натисніть «Завантажити .docx». Можна редагувати текст, форматування, стилі абзаців, списки, посилання й таблиці. Частини, які не показано, наприклад колонтитули та коментарі, залишаються в файлі без змін.',
     newDocument: 'Новий документ',
     untitled: 'Без назви',
+    bulletStyle: 'Стиль маркера',
+    numberingStyle: 'Формат нумерації',
   },
   ar: {
     language: 'اللغة',
@@ -1463,6 +1485,8 @@ const TRANSLATIONS = {
     faqEditA: 'نعم. انقر على «تحرير»، أجرِ تغييراتك، ثم انقر على «تنزيل .docx». يمكن تحرير النص والتنسيق وأنماط الفقرات والقوائم والروابط والجداول. الأجزاء التي لا تُعرض، مثل الرؤوس والتذييلات والتعليقات، تبقى دون تغيير في الملف.',
     newDocument: 'مستند جديد',
     untitled: 'بلا عنوان',
+    bulletStyle: 'نمط التعداد النقطي',
+    numberingStyle: 'تنسيق الترقيم',
   },
   hi: {
     language: 'भाषा',
@@ -1583,6 +1607,8 @@ const TRANSLATIONS = {
     faqEditA: 'हाँ। “संपादित करें” पर क्लिक करें, अपने बदलाव करें और “.docx डाउनलोड करें” पर क्लिक करें। टेक्स्ट, फ़ॉर्मेटिंग, अनुच्छेद शैलियाँ, सूचियाँ, लिंक और तालिकाएँ संपादित की जा सकती हैं। जो हिस्से नहीं दिखाए जाते, जैसे हेडर और टिप्पणियाँ, वे फ़ाइल में बिना बदलाव के रहते हैं।',
     newDocument: 'नया दस्तावेज़',
     untitled: 'शीर्षकहीन',
+    bulletStyle: 'बुलेट शैली',
+    numberingStyle: 'क्रमांकन प्रारूप',
   },
   id: {
     language: 'Bahasa',
@@ -1703,6 +1729,8 @@ const TRANSLATIONS = {
     faqEditA: 'Bisa. Klik “Edit”, buat perubahan Anda, lalu klik “Unduh .docx”. Teks, format, gaya paragraf, daftar, tautan, dan tabel dapat diedit. Bagian yang tidak ditampilkan, seperti header dan komentar, tetap tidak berubah di dalam file.',
     newDocument: 'Dokumen baru',
     untitled: 'Tanpa judul',
+    bulletStyle: 'Gaya poin',
+    numberingStyle: 'Format penomoran',
   },
   zh: {
     language: '语言',
@@ -1823,6 +1851,8 @@ const TRANSLATIONS = {
     faqEditA: '可以。点击“编辑”，进行修改，然后点击“下载 .docx”。可以编辑文字、格式、段落样式、列表、链接和表格。未显示的部分，例如页眉和批注，会在文件中保持不变。',
     newDocument: '新建文档',
     untitled: '未命名',
+    bulletStyle: '项目符号样式',
+    numberingStyle: '编号格式',
   },
   ja: {
     language: '言語',
@@ -1943,6 +1973,8 @@ const TRANSLATIONS = {
     faqEditA: 'はい。「編集」をクリックして変更を加え、「.docx をダウンロード」をクリックします。テキスト、書式、段落スタイル、リスト、リンク、表を編集できます。表示されない部分、たとえばヘッダーやコメントは、ファイル内でそのまま変更されません。',
     newDocument: '新規文書',
     untitled: '無題',
+    bulletStyle: '行頭文字のスタイル',
+    numberingStyle: '番号の書式',
   },
   ko: {
     language: '언어',
@@ -2063,6 +2095,8 @@ const TRANSLATIONS = {
     faqEditA: '네. ‘편집’을 클릭하고 변경한 다음 ‘.docx 다운로드’를 클릭하세요. 텍스트, 서식, 문단 스타일, 목록, 링크, 표를 편집할 수 있습니다. 머리글, 댓글처럼 표시되지 않는 부분은 파일에서 변경되지 않은 채로 유지됩니다.',
     newDocument: '새 문서',
     untitled: '제목 없음',
+    bulletStyle: '글머리 기호 스타일',
+    numberingStyle: '번호 매기기 형식',
   },
 };
 

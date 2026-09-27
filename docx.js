@@ -37,6 +37,15 @@ const LIST_STYLES = {
   upperLetter: 'upper-alpha', lowerRoman: 'lower-roman', upperRoman: 'upper-roman',
 };
 
+// Word writes most bullets as characters of the Symbol and Wingdings fonts, in the Unicode
+// private use area. Browsers do not have those glyphs, so they are shown as their look-alikes.
+const SYMBOL_BULLETS = { '\uf0b7': '\u2022', '\uf0a7': '\u25aa', '\uf0d8': '\u27a2', '\uf076': '\u2756', '\uf0fc': '\u2713', '\uf0e8': '\u27a2', o: '\u25e6' };
+
+function bulletMarker(text) {
+  const c = SYMBOL_BULLETS[text] || text;
+  return c && !/[\ue000-\uf8ff]/.test(c) ? `"${c.replace(/["\\]/g, '')}  "` : null;
+}
+
 const SERIF_FONTS = /times|cambria|georgia|garamond|palatino|book antiqua|baskerville|minion|constantia|serif/i;
 
 // ---------- Zip ----------
@@ -197,7 +206,7 @@ function styleChain(styles, id) {
   return chain;
 }
 
-// Numbering definitions: numId → ilvl → { format, start }.
+// Numbering definitions: numId → ilvl → { format, start, text, indent }.
 function parseNumbering(doc) {
   const abstracts = new Map();
   const numbering = new Map();
@@ -208,6 +217,8 @@ function parseNumbering(doc) {
       map.set(num(attr(lvl, 'ilvl')) || 0, {
         format: val(child(lvl, 'numFmt')) || 'decimal',
         text: val(child(lvl, 'lvlText')) ?? '',
+        // Where the text of this level starts, in twips from the margin.
+        indent: num(attr(child(child(lvl, 'pPr'), 'ind'), 'left') ?? attr(child(child(lvl, 'pPr'), 'ind'), 'start')),
         start: num(val(child(lvl, 'start'))) ?? 1,
       });
     }
@@ -454,13 +465,28 @@ class Renderer {
 
     if (!top || top.ilvl < ilvl) {
       const list = h(ordered ? 'ol' : 'ul');
+      // The indent of the level, as in Word, measured from the list it is nested in. A jump of
+      // several levels then indents several steps.
+      if (level.indent !== undefined) list.style.paddingInlineStart = `${Math.max(0, level.indent - (top?.indent || 0)) / TWIPS_PER_PX}px`;
       if (ordered) {
         list.style.listStyleType = LIST_STYLES[level.format] || 'decimal';
+        // Numbers followed by something else than a period, like 1) or (a).
+        const m = level.text.match(/^([^%]*)%\d([^%]*)$/);
+        if (m && (m[1] || m[2] !== '.')) {
+          list.style.setProperty('--num-style', LIST_STYLES[level.format] || 'decimal');
+          list.style.setProperty('--num-before', `"${m[1].replace(/["\\]/g, '')}"`);
+          list.style.setProperty('--num-after', `"${m[2].replace(/["\\]/g, '')}"`);
+          list.classList.add('custom-number');
+        }
         if (counters[ilvl] !== 1) list.start = counters[ilvl];
       } else if (level.format === 'none') list.style.listStyleType = 'none';
+      else {
+        const marker = bulletMarker(level.text);
+        if (marker) list.style.listStyleType = marker;
+      }
       const host = top ? top.el.lastElementChild || top.el : parent;
       host.appendChild(list);
-      top = { el: list, ilvl, numId };
+      top = { el: list, ilvl, numId, indent: level.indent ?? (lists[lists.length - 1]?.indent || 0) };
       lists.push(top);
     }
     top.el.appendChild(para.el);

@@ -680,6 +680,62 @@ function toggleList(model, paragraphs, kind) {
   }
 }
 
+// Number and bullet formats offered in the toolbar, as [label, numFmt, lvlText]; %n is the level.
+const NUMBER_STYLES = [
+  ['1. 2. 3.', 'decimal', '%n.'],
+  ['1) 2) 3)', 'decimal', '%n)'],
+  ['a. b. c.', 'lowerLetter', '%n.'],
+  ['a) b) c)', 'lowerLetter', '%n)'],
+  ['A. B. C.', 'upperLetter', '%n.'],
+  ['i. ii. iii.', 'lowerRoman', '%n.'],
+  ['I. II. III.', 'upperRoman', '%n.'],
+];
+const BULLET_STYLES = [
+  ['\u2022', 'bullet', '\u2022'],
+  ['\u25e6', 'bullet', '\u25e6'],
+  ['\u25aa', 'bullet', '\u25aa'],
+  ['\u2013', 'bullet', '\u2013'],
+  ['\u27a2', 'bullet', '\u27a2'],
+  ['\u2713', 'bullet', '\u2713'],
+];
+
+// Gives the level each paragraph is on a number or bullet format, as the numbering library in
+// Word does: only that level of that list changes. Paragraphs not in such a list become one.
+function setListFormat(model, paragraphs, kind, format, text) {
+  if (!paragraphs.length) return;
+  if (!paragraphs.every((p) => listKind(model, p) === kind)) {
+    toggleList(model, paragraphs.filter((p) => listKind(model, p) !== kind), kind);
+  }
+  const doc = model.parts.numbering.doc;
+  const done = new Set();
+  for (const p of paragraphs) {
+    const numPr = child(child(p, 'pPr'), 'numPr');
+    const numId = val(child(numPr, 'numId'));
+    const ilvl = num(val(child(numPr, 'ilvl'))) || 0;
+    if (done.has(`${numId}:${ilvl}`)) continue;
+    done.add(`${numId}:${ilvl}`);
+    ensureLevel(model, numId, ilvl);
+    const numEl = kids(doc.documentElement, 'num').find((n) => attr(n, 'numId') === numId);
+    const abstract = kids(doc.documentElement, 'abstractNum').find((a) => attr(a, 'abstractNumId') === val(child(numEl, 'abstractNumId')));
+    const override = kids(numEl, 'lvlOverride').find((o) => (num(attr(o, 'ilvl')) || 0) === ilvl);
+    const base = child(override, 'lvl') || kids(abstract, 'lvl').find((l) => (num(attr(l, 'ilvl')) || 0) === ilvl);
+    const lvl = base ? base.cloneNode(true) : doc.importNode(new DOMParser().parseFromString(levelXml(kind, ilvl), 'application/xml').documentElement, true);
+    const order = ['start', 'numFmt', 'lvlRestart', 'pStyle', 'isLgl', 'suff', 'lvlText', 'lvlPicBulletId', 'legacy', 'lvlJc', 'pPr', 'rPr'];
+    putChild(lvl, W(doc, 'numFmt', { val: format }), order);
+    putChild(lvl, W(doc, 'lvlText', { val: text.replace('%n', `%${ilvl + 1}`) }), order);
+    if (!child(lvl, 'start')) putChild(lvl, W(doc, 'start', { val: 1 }), order);
+    // The Symbol font of Word's own bullets would turn a plain character into another glyph.
+    removeChildren(lvl, 'rPr', 'lvlPicBulletId');
+    const next = W(doc, 'lvlOverride', { ilvl });
+    const start = child(override, 'startOverride');
+    if (start) next.append(start.cloneNode(true));
+    next.append(lvl);
+    if (override) override.replaceWith(next);
+    else numEl.append(next);
+    model.changedParts.add(model.parts.numbering.path);
+  }
+}
+
 // Indent: list items move a level, other paragraphs move by half an inch.
 function indent(model, paragraphs, delta) {
   for (const p of paragraphs) {
@@ -687,6 +743,7 @@ function indent(model, paragraphs, delta) {
     const numPr = child(pPr, 'numPr');
     if (numPr && listKind(model, p)) {
       const ilvl = Math.max(0, Math.min(8, (num(val(child(numPr, 'ilvl'))) || 0) + delta));
+      ensureLevel(model, val(child(numPr, 'numId')), ilvl);
       putChild(numPr, W(model.doc, 'ilvl', { val: ilvl }), ['ilvl', 'numId']);
       continue;
     }
@@ -704,6 +761,33 @@ function indent(model, paragraphs, delta) {
 
 const BULLETS = ['•', 'o', '▪'];
 const NUMBER_FORMATS = ['decimal', 'lowerLetter', 'lowerRoman'];
+
+function levelXml(kind, i) {
+  const format = kind === 'bullet' ? 'bullet' : NUMBER_FORMATS[i % 3];
+  const text = kind === 'bullet' ? BULLETS[i % 3] : `%${i + 1}.`;
+  return `<w:lvl xmlns:w="${NS.w}" w:ilvl="${i}"><w:start w:val="1"/><w:numFmt w:val="${format}"/><w:lvlText w:val="${text}"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="${720 * (i + 1)}" w:hanging="360"/></w:pPr></w:lvl>`;
+}
+
+// Word defines nine levels for every list; other programs sometimes fewer. A list item moved to
+// a level its list does not define would lose its bullet or number, so the level is added.
+function ensureLevel(model, numId, ilvl) {
+  const doc = model.parts.numbering?.doc;
+  const numEl = doc && kids(doc.documentElement, 'num').find((n) => attr(n, 'numId') === numId);
+  const abstractId = val(child(numEl, 'abstractNumId'));
+  const abstract = kids(doc?.documentElement, 'abstractNum').find((a) => attr(a, 'abstractNumId') === abstractId);
+  if (!abstract) return;
+  const has = (i) => kids(abstract, 'lvl').some((l) => (num(attr(l, 'ilvl')) || 0) === i);
+  if (has(ilvl)) return;
+  const first = kids(abstract, 'lvl').find((l) => attr(l, 'ilvl') === '0');
+  const kind = val(child(first, 'numFmt')) === 'bullet' ? 'bullet' : 'number';
+  for (let i = 0; i <= ilvl; i++) {
+    if (has(i)) continue;
+    const lvl = doc.importNode(new DOMParser().parseFromString(levelXml(kind, i), 'application/xml').documentElement, true);
+    const after = kids(abstract, 'lvl').find((l) => (num(attr(l, 'ilvl')) || 0) > i);
+    abstract.insertBefore(lvl, after || null);
+  }
+  model.changedParts.add(model.parts.numbering.path);
+}
 
 // A numbering definition for a new list, continuing the list right before paragraph p if it
 // has the same kind. Returns the numId.
