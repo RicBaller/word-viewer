@@ -605,6 +605,10 @@ function splitParagraph() {
   if (!hasContent(probe) && block.tagName !== 'LI') {
     next = document.createElement('p');
     if (block.dataset.x != null) next.dataset.next = block.dataset.x;
+    // It looks right at once, not only after the next render: the same paragraph style, or
+    // normal text after a heading.
+    const style = /^H[1-6]$/.test(block.tagName) ? model().renderer.normalStyle() : block.getAttribute('style');
+    if (style) next.setAttribute('style', style);
   } else {
     next = block.cloneNode(false);
     next.removeAttribute('id');

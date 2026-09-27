@@ -561,6 +561,13 @@ class Renderer {
     };
   }
 
+  // Inline style of a paragraph in the default style, for paragraphs the editor adds.
+  normalStyle() {
+    const el = h('p');
+    this.blockStyle(el, this.basePara, this.baseRun, false);
+    return el.getAttribute('style') || '';
+  }
+
   blockStyle(el, props, run, isList) {
     const style = el.style;
     if (props.align && props.align !== 'start') style.textAlign = props.align;
