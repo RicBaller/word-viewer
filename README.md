@@ -24,12 +24,21 @@ Run `npx wrangler dev` and open http://localhost:8787. That serves the files the
 
 Needs a current browser: Chrome/Edge 103+, Firefox 113+, Safari 16.4+. Find highlighting uses the CSS Custom Highlight API.
 
-## SEO and hosting
+## Hosting
+
+The site runs on Cloudflare Workers as static assets only: `wrangler.jsonc` has no `main`, so no Worker code runs and asset requests are not billed as Worker requests. Deploy with `npx wrangler deploy`.
+
+- `wrangler.jsonc`: the repository root is the assets directory. `html_handling: auto-trailing-slash` serves `changelog.html` at `/changelog` (and redirects `/changelog.html` there). `not_found_handling: 404-page` answers unknown paths with `404.html` and status 404.
+- `.assetsignore`: files in the repository that are not published (`.git`, `.claude`, `.remember`, `README.md`, …). Add new non-site files here.
+- `_headers`: response headers. HTML, JS, CSS and the manifest keep Cloudflare's default `public, max-age=0, must-revalidate`: file names have no version, so browsers revalidate with the ETag (a 304) and never combine old and new scripts after a deploy. Icons and images are cached for a week, `sample.docx` for a day. Rules must not overlap on the same header, because Cloudflare joins the values of all matching rules.
+- Cloudflare caches static assets on its network itself and a deploy takes effect at once, so no Cache Rules are needed.
+
+## SEO
 
 - `word-viewer.app` is the canonical domain: `canonical`, Open Graph URLs, `sitemap.xml` and `robots.txt` point there.
 - Update `lastmod` in `sitemap.xml` when page content changes.
 - The intro and FAQ on the start page are duplicated in the JSON-LD `FAQPage` in `index.html`. Keep both in sync.
-- `404.html` uses absolute paths, so it works at any URL. The web server must serve it for missing pages (nginx: `error_page 404 /404.html;`).
+- `404.html` uses absolute paths, so it works at any URL.
 - Pushing a tag runs `.github/workflows/purgeCache.yml`, which purges the Cloudflare cache. It needs the repository variable `CLOUDFLARE_ZONES` (one `site=zone_id` per line) and the secret `CLOUDFLARE_TOKEN`.
 - Icons: `favicon.svg` is the source. The PNGs in `icons/`, `apple-touch-icon.png`, `favicon.ico` and `og-image.png` (1200×630) are rendered from it.
 - `sample.docx` is the document behind "Open sample document".

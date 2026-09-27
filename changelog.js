@@ -1,4 +1,4 @@
-// Release history, newest first. Each version is also the element id, so /changelog.html#v1.2.0 links to it.
+// Release history, newest first. Each version is also the element id, so /changelog#v1.2.0 links to it.
 // Change texts are keyed by language; languages without their own text show English.
 
 const CHANGELOG = [
