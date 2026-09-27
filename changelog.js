@@ -3,6 +3,32 @@
 
 const CHANGELOG = [
   {
+    version: '1.1.0',
+    date: '2026-09-27',
+    changes: {
+      en: [
+        'Page view now splits the document into pages of the right size, like in Word.',
+        'Paragraphs, lists and tables continue on the next page; table header rows repeat at the top.',
+        'Headings no longer end up alone at the bottom of a page.',
+        'The top bar shows how many pages the document has.',
+        'Printing and saving as PDF give the same pages as on screen.',
+        'On small screens the pages are scaled down to fit.',
+        'Table columns have the widths from the document and stay the same on every page.',
+        'The changelog has a shorter address: /changelog.',
+      ],
+      nl: [
+        'De paginaweergave deelt het document nu op in pagina’s van het juiste formaat, zoals in Word.',
+        'Alinea’s, lijsten en tabellen lopen door op de volgende pagina; kopregels van tabellen herhalen bovenaan.',
+        'Koppen blijven niet meer alleen onderaan een pagina staan.',
+        'De bovenbalk toont hoeveel pagina’s het document heeft.',
+        'Afdrukken en opslaan als PDF geven dezelfde pagina’s als op het scherm.',
+        'Op kleine schermen worden de pagina’s verkleind zodat ze passen.',
+        'Tabelkolommen krijgen de breedtes uit het document en blijven op elke pagina gelijk.',
+        'De changelog heeft een korter adres: /changelog.',
+      ],
+    },
+  },
+  {
     version: '1.0.0',
     date: '2026-09-26',
     changes: {
