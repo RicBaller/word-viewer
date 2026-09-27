@@ -191,10 +191,13 @@ a.button { text-decoration: none; }
 
 main:has(> .viewer:not([hidden])) { padding: 0; background: var(--desk); }
 
-.doc-tools {
+.doc-bars {
   position: sticky;
   top: 0;
   z-index: 5;
+}
+
+.doc-tools {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -321,24 +324,102 @@ main:has(> .viewer:not([hidden])) { padding: 0; background: var(--desk); }
 .doc li.continued { list-style-type: none; }
 
 /* Text view: no paper, the text reflows at a comfortable width. */
-.doc:not(.page) {
+.doc:not(.page):not(.editing) {
   max-width: 760px;
   padding: 40px 48px;
   border-radius: 8px;
   line-height: 1.5;
 }
 /* Paragraphs carry the line spacing of the document inline; reading view uses its own. */
-.doc:not(.page) :is(p, li, td) { line-height: 1.5 !important; }
+.doc:not(.page):not(.editing) :is(p, li, td) { line-height: 1.5 !important; }
 
 @media (max-width: 899px) {
-  .doc:not(.page) { padding: 24px 20px; }
+  .doc:not(.page):not(.editing) { padding: 24px 20px; }
+}
+
+/* Edit view: one long sheet with the width and margins of the paper, as in Word's draft view. */
+.doc.editing {
+  width: var(--page-width, 816px);
+  max-width: 100%;
+  min-height: var(--page-height, 1056px);
+  padding: var(--page-top, 96px) var(--page-right, 96px) var(--page-bottom, 96px) var(--page-left, 96px);
+  box-shadow: var(--page-shadow);
+  outline: none;
+  caret-color: #000;
+}
+.doc.editing .page-break {
+  display: block;
+  height: 0;
+  margin: 12px 0;
+  border: 0;
+  border-top: 1px dashed #8a8f98;
+}
+.doc.editing [contenteditable="false"] { cursor: default; }
+.doc.editing .textbox, .doc.editing .notes { opacity: .75; }
+
+@media (max-width: 899px) {
+  .doc.editing { min-height: 0; padding: 24px 20px; }
+}
+
+/* ---------- Edit toolbar ---------- */
+
+.edit-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px 12px;
+  flex-wrap: wrap;
+  padding: 6px 24px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.tool-group { display: flex; align-items: center; gap: 2px; }
+.edit-tools button.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 6px;
+  border-color: transparent;
+  font-size: 15px;
+  line-height: 1;
+}
+.edit-tools button.icon:hover { background: var(--hover); }
+.edit-tools button[aria-pressed="true"] { background: var(--hover); border-color: var(--accent); color: var(--accent); }
+.edit-tools svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.edit-tools svg circle, .edit-tools svg text { fill: currentColor; stroke: none; }
+.edit-tools select { height: 32px; padding-block: 0; }
+#styleSelect { width: 150px; }
+#fontSelect { width: 140px; }
+.edit-tools select.size { width: 64px; }
+.color-tool {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.color-tool:hover { background: var(--hover); }
+.color-tool span { border-bottom: 3px solid var(--color, #000); line-height: 1.1; box-shadow: 0 1px 0 var(--border); }
+.color-tool input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.save-docx { margin-inline-start: auto; }
+
+/* Small screens: the toolbar is one row that scrolls sideways, so it does not cover the text. */
+@media (max-width: 899px) {
+  .edit-tools { flex-wrap: nowrap; overflow-x: auto; padding-inline: 12px; scrollbar-width: thin; }
+  .tool-group, .save-docx { flex-shrink: 0; }
+  .save-docx { margin-inline-start: 0; }
 }
 
 /* ---------- Print ---------- */
 
 @media print {
   body { display: block; background: #fff; }
-  .topbar, .footer, .doc-tools, .contents, .toast, .menu { display: none !important; }
+  .topbar, .footer, .doc-bars, .contents, .toast, .menu { display: none !important; }
   /* Block layout: browsers ignore forced page breaks inside flex items. */
   main, .viewer-body { display: block; padding: 0 !important; background: none !important; }
   .doc { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
