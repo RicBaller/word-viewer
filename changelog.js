@@ -3,6 +3,36 @@
 
 const CHANGELOG = [
   {
+    version: '1.2.0',
+    date: '2026-09-27',
+    changes: {
+      en: [
+        'Edit Word documents in the new Edit view and download the result as a .docx file.',
+        'Everything you do not change stays in the file exactly as it was, including headers, comments and fields.',
+        'Format text: bold, italic, underline, strikethrough, superscript, subscript, font, size, color and highlight.',
+        'Choose a paragraph style such as Heading 1 to 4, Title or Quote, and align text left, center, right or justified.',
+        'Make bulleted and numbered lists, and indent them with Tab and Shift+Tab.',
+        'Insert tables, add or delete rows and columns, and move between cells with Tab.',
+        'Add links and page breaks.',
+        'Undo and redo, with the keyboard shortcuts you know from Word.',
+        'The top bar shows when changes are not downloaded yet, and closing the document asks first.',
+        'Download the document as Word (.docx) from the export menu or with Ctrl+S.',
+      ],
+      nl: [
+        'Bewerk Word-documenten in de nieuwe weergave Bewerken en download het resultaat als .docx-bestand.',
+        'Alles wat je niet wijzigt, blijft precies zoals het was in het bestand, ook kopteksten, opmerkingen en velden.',
+        'Maak tekst op: vet, cursief, onderstrepen, doorhalen, superscript, subscript, lettertype, grootte, kleur en markering.',
+        'Kies een alineastijl zoals Kop 1 tot 4, Titel of Citaat, en lijn tekst links, gecentreerd, rechts of uitgevuld uit.',
+        'Maak lijsten met opsommingstekens of nummers en laat ze inspringen met Tab en Shift+Tab.',
+        'Voeg tabellen in, voeg rijen en kolommen toe of verwijder ze, en ga met Tab van cel naar cel.',
+        'Voeg koppelingen en pagina-eindes toe.',
+        'Maak ongedaan en opnieuw, met de sneltoetsen die je van Word kent.',
+        'De bovenbalk toont wanneer wijzigingen nog niet zijn gedownload, en sluiten vraagt eerst om bevestiging.',
+        'Download het document als Word (.docx) via het exportmenu of met Ctrl+S.',
+      ],
+    },
+  },
+  {
     version: '1.1.0',
     date: '2026-09-27',
     changes: {
