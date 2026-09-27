@@ -89,15 +89,11 @@ function openDoc(newDoc) {
   doc.element.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach((el, i) => {
     el.id ||= `heading-${i + 1}`;
   });
-  const page = doc.element;
-  for (const [key, value] of Object.entries(doc.page)) page.style.setProperty(`--page-${key}`, `${value}px`);
-  els.docHost.replaceChildren(page);
-  printStyle.textContent = `@page { size: ${doc.page.width}px ${doc.page.height}px; margin: ${doc.page.top}px ${doc.page.right}px ${doc.page.bottom}px ${doc.page.left}px; }`;
+  for (const [key, value] of Object.entries(doc.page)) doc.element.style.setProperty(`--page-${key}`, `${value}px`);
   els.findInput.value = '';
-  runFind();
   renderContents();
-  render();
   show('viewer');
+  render();
   window.scrollTo(0, 0);
 }
 
@@ -122,19 +118,65 @@ function countWords(text) {
 const printStyle = document.createElement('style');
 document.head.appendChild(printStyle);
 
+// Shows the document in the active view. Page view is laid out once per document, the first
+// time it is shown; it needs the document on screen to measure it.
+async function showDocument() {
+  if (view === 'page' && !doc.pages) {
+    const current = doc;
+    current.paging ??= paginate(current.element, els.docHost, current.page);
+    const pages = await current.paging;
+    if (doc !== current) return;
+    doc.pages = pages;
+  }
+  const root = currentRoot();
+  if (doc.shown !== root) {
+    doc.shown = root;
+    els.docHost.replaceChildren(root);
+    // Printed pages match the pages on screen; the text view is paged by the browser.
+    const { width, height, top, right, bottom, left } = doc.page;
+    const margin = view === 'page' ? '0' : `${top}px ${right}px ${bottom}px ${left}px`;
+    printStyle.textContent = `@page { size: ${width}px ${height}px; margin: ${margin}; }`;
+    // Matches are ranges in the element on screen, so they are found again.
+    runFind();
+  }
+  fitPages();
+  updateInfo();
+}
+
+// The element on screen: the pages in page view, the document itself in text view.
+function currentRoot() {
+  return view === 'page' ? doc.pages : doc.element;
+}
+
+// Pages keep the paper size of the document; on narrow screens they are scaled down to fit.
+function fitPages() {
+  if (!doc?.pages) return;
+  const scale = Math.min(1, els.docHost.clientWidth / doc.page.width);
+  doc.pages.style.zoom = scale < 1 ? String(scale) : '';
+}
+
+new ResizeObserver(fitPages).observe(els.docHost);
+
+function updateInfo() {
+  const parts = [doc.name];
+  if (view === 'page' && doc.pages) parts.push(t('pages', { n: doc.pages.children.length }));
+  parts.push(t('words', { n: doc.words }));
+  els.fileInfo.textContent = parts.join(' · ');
+}
+
 // ---------- Rendering ----------
 
 function render() {
   closeMenu();
   const isText = view === 'text';
-  els.docHost.classList.toggle('text-view', isText);
   els.pageViewBtn.classList.toggle('active', !isText);
   els.textViewBtn.classList.toggle('active', isText);
   els.contents.hidden = !showContents;
   els.contentsBtn.classList.toggle('active', showContents);
   els.contentsBtn.setAttribute('aria-expanded', String(showContents));
-  els.fileInfo.textContent = `${doc.name} · ${t('words', { n: doc.words })}`;
+  updateInfo();
   updateFindCount();
+  showDocument();
 }
 
 function renderContents() {
@@ -207,10 +249,11 @@ function clearFind() {
 function runFind() {
   clearFind();
   const query = els.findInput.value;
-  if (doc && query.trim()) {
+  const root = doc && currentRoot();
+  if (root && query.trim()) {
     const nodes = [];
     let text = '';
-    const walker = document.createTreeWalker(doc.element, NodeFilter.SHOW_TEXT);
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     while (walker.nextNode()) {
       nodes.push({ node: walker.currentNode, start: text.length });
       text += walker.currentNode.data;
