@@ -1,0 +1,13 @@
+// Static site on Cloudflare Workers: no "main", so no Worker code runs.
+// Every request is answered from the assets below (free, not billed as Worker requests).
+{
+  "name": "word-viewer",
+  "compatibility_date": "2026-09-26",
+  "assets": {
+    "directory": ".",
+    // Unknown paths get 404.html with status 404.
+    "not_found_handling": "404-page",
+    // /changelog serves changelog.html; /changelog.html redirects to /changelog.
+    "html_handling": "auto-trailing-slash"
+  }
+}

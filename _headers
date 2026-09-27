@@ -1,0 +1,27 @@
+# Response headers for the static assets. Not served itself.
+# HTML, JS, CSS and the manifest keep the default "public, max-age=0, must-revalidate":
+# file names carry no version, so browsers revalidate with the ETag (a cheap 304) and
+# never mix an old app.js with a new i18n.js after a deploy.
+# Rules must not overlap on one header: Cloudflare joins the values of all matching rules.
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+
+/icons/*
+  Cache-Control: public, max-age=604800
+
+/favicon.ico
+  Cache-Control: public, max-age=604800
+
+/favicon.svg
+  Cache-Control: public, max-age=604800
+
+/apple-touch-icon.png
+  Cache-Control: public, max-age=604800
+
+/og-image.png
+  Cache-Control: public, max-age=604800
+
+/sample.docx
+  Cache-Control: public, max-age=86400

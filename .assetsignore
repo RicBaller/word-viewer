@@ -1,0 +1,11 @@
+# Files in the repository that must not be published as assets (gitignore syntax).
+.git
+.github
+.claude
+.remember
+.wrangler
+node_modules
+.DS_Store
+.gitignore
+README.md
+wrangler.jsonc
