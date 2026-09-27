@@ -41,7 +41,8 @@ const SERIF_FONTS = /times|cambria|georgia|garamond|palatino|book antiqua|basker
 
 // ---------- Zip ----------
 
-// Reads the central directory. Returns a map of path to { method, data } (data still compressed).
+// Reads the central directory. Returns a map of path to { method, crc, originalSize, data }
+// (data still compressed, so unchanged entries can be written back as they are).
 function readZip(buffer) {
   const bytes = new Uint8Array(buffer);
   const view = new DataView(buffer);
@@ -62,14 +63,16 @@ function readZip(buffer) {
   for (let n = 0; n < count; n++) {
     if (view.getUint32(pos, true) !== 0x02014b50) throw new Error('invalidFile');
     const method = view.getUint16(pos + 10, true);
+    const crc = view.getUint32(pos + 16, true);
     const size = view.getUint32(pos + 20, true);
+    const originalSize = view.getUint32(pos + 24, true);
     const nameLength = view.getUint16(pos + 28, true);
     const extraLength = view.getUint16(pos + 30, true);
     const commentLength = view.getUint16(pos + 32, true);
     const local = view.getUint32(pos + 42, true);
     const name = decoder.decode(bytes.subarray(pos + 46, pos + 46 + nameLength));
     const start = local + 30 + view.getUint16(local + 26, true) + view.getUint16(local + 28, true);
-    entries.set(name, { method, data: bytes.subarray(start, start + size) });
+    entries.set(name, { method, crc, originalSize, data: bytes.subarray(start, start + size) });
     pos += 46 + nameLength + extraLength + commentLength;
   }
   return entries;
@@ -130,21 +133,28 @@ class DocxPackage {
 
   // Relationships of a part: id → { type, target (package path or external URL), external }.
   async rels(part) {
-    const slash = part.lastIndexOf('/');
-    const doc = await this.xml(`${part.slice(0, slash + 1)}_rels/${part.slice(slash + 1)}.rels`);
-    const rels = new Map();
-    if (!doc) return rels;
-    for (const r of doc.getElementsByTagNameNS(NS.rel, 'Relationship')) {
-      const external = r.getAttribute('TargetMode') === 'External';
-      const target = r.getAttribute('Target') || '';
-      rels.set(r.getAttribute('Id'), {
-        type: (r.getAttribute('Type') || '').split('/').pop(),
-        target: external ? target : resolvePath(part, target),
-        external,
-      });
-    }
-    return rels;
+    return parseRels((await this.xml(relsPath(part))), part);
   }
+}
+
+const relsPath = (part) => {
+  const slash = part.lastIndexOf('/');
+  return `${part.slice(0, slash + 1)}_rels/${part.slice(slash + 1)}.rels`;
+};
+
+function parseRels(doc, part) {
+  const rels = new Map();
+  if (!doc) return rels;
+  for (const r of doc.getElementsByTagNameNS(NS.rel, 'Relationship')) {
+    const external = r.getAttribute('TargetMode') === 'External';
+    const target = r.getAttribute('Target') || '';
+    rels.set(r.getAttribute('Id'), {
+      type: (r.getAttribute('Type') || '').split('/').pop(),
+      target: external ? target : resolvePath(part, target),
+      external,
+    });
+  }
+  return rels;
 }
 
 // ---------- Styles and numbering ----------
@@ -364,6 +374,11 @@ class Renderer {
     this.fields = []; // open complex fields: { instr, link }
     this.notes = { footnote: [], endnote: [] };
     this.noteContent = { footnote: new Map(), endnote: new Map() };
+    // For editing: rendered elements point to their XML node through data-x (blocks, links,
+    // objects) or data-r (the run whose properties a stretch of text started from).
+    this.nodes = [];
+    this.blocksRendered = []; // editable w:p and w:tbl nodes of the body
+    this.locked = 0; // > 0 inside text boxes and notes, which are not edited
 
     const { defaultRPr, defaultPPr, defaultParagraph } = styles;
     this.defaultParagraph = defaultParagraph;
@@ -375,6 +390,12 @@ class Renderer {
     }
   }
 
+  mark(el, node, key = 'x') {
+    if (this.locked) return;
+    el.dataset[key] = this.nodes.push(node) - 1;
+    if (key === 'x' && (node.localName === 'p' || node.localName === 'tbl')) this.blocksRendered.push(node);
+  }
+
   // Renders body-level content (paragraphs, tables) into parent.
   blocks(parent, nodes, rels) {
     let lists = []; // open lists, outermost first: { el, ilvl, numId }
@@ -383,6 +404,7 @@ class Renderer {
       switch (node.localName) {
         case 'p': {
           const para = this.paragraph(node, rels);
+          this.mark(para.el, node);
           if (para.breakBefore) {
             lists = [];
             parent.appendChild(pageBreak());
@@ -513,7 +535,7 @@ class Renderer {
     const el = h(level ? 'li' : tag);
     if (title) el.className = 'doc-title';
     this.blockStyle(el, props, run, !!level);
-    if (label) el.append(h('span', { class: 'heading-number' }, `${label} `));
+    if (label) el.append(h('span', { class: 'heading-number', contenteditable: 'false' }, `${label} `));
 
     const ctx = { rels, base: run, last: null };
     this.inline(el, p.children, ctx, run);
@@ -561,11 +583,29 @@ class Renderer {
   }
 
   // Renders runs and other inline content of a paragraph into el.
-  inline(el, nodes, ctx, base) {
-    for (const node of nodes) {
+  inline(el, nodes, ctx, base, inField = false) {
+    nodes = [...nodes];
+    for (let i = 0; i < nodes.length; i++) {
+      const node = nodes[i];
+      // A field that starts and ends here (page number, cross-reference, date) is shown as its
+      // result and kept as one piece, so editing the text around it does not break it.
+      const end = this.locked || inField ? -1 : fieldEnd(nodes, i);
+      if (end > i) {
+        const field = h('span', { class: 'field', contenteditable: 'false' });
+        const saved = this.fields.length;
+        this.inline(field, nodes.slice(i, end + 1), { ...ctx, last: null }, base, true);
+        this.fields.length = saved;
+        this.mark(field, nodes.slice(i, end + 1));
+        this.append(el, field, ctx);
+        ctx.last = null;
+        i = end;
+        continue;
+      }
       if (node.namespaceURI === NS.m && (node.localName === 'oMath' || node.localName === 'oMathPara')) {
         const text = [...node.getElementsByTagNameNS(NS.m, 't')].map((t) => t.textContent).join('');
-        this.append(el, h('span', { class: 'math' }, text), ctx);
+        const math = h('span', { class: 'math', contenteditable: 'false' }, text);
+        this.mark(math, node);
+        this.append(el, math, ctx);
         continue;
       }
       if (node.namespaceURI !== NS.w) continue;
@@ -580,6 +620,7 @@ class Renderer {
           if (href) {
             const a = h('a', { href });
             if (!href.startsWith('#')) Object.assign(a, { target: '_blank', rel: 'noopener' });
+            this.mark(a, node);
             this.append(el, a, ctx);
             this.inline(a, node.children, { ...ctx, last: null }, base);
             ctx.last = null;
@@ -589,12 +630,23 @@ class Renderer {
         case 'bookmarkStart': {
           const name = attr(node, 'name');
           if (name && name !== '_GoBack') {
-            this.append(el, h('a', { id: `bm-${name}`, class: 'bookmark' }), ctx);
+            this.append(el, h('a', { id: `bm-${name}`, class: 'bookmark', contenteditable: 'false' }), ctx);
             ctx.last = null;
           }
           break;
         }
-        case 'fldSimple':
+        case 'fldSimple': {
+          if (this.locked) {
+            this.inline(el, node.children, ctx, base);
+            break;
+          }
+          const field = h('span', { class: 'field', contenteditable: 'false' });
+          this.inline(field, node.children, { ...ctx, last: null }, base);
+          this.mark(field, node);
+          this.append(el, field, ctx);
+          ctx.last = null;
+          break;
+        }
         case 'smartTag':
         case 'customXml':
         case 'ins':
@@ -640,6 +692,7 @@ class Renderer {
         return;
       }
       const { outer, inner } = this.wrap(props, ctx);
+      this.mark(outer, r, 'r');
       inner.append(s);
       this.append(el, outer, ctx);
       ctx.last = { key, outer, inner };
@@ -650,7 +703,7 @@ class Renderer {
         if (node.localName === 'AlternateContent') {
           const fallback = [...node.children].find((c) => c.localName === 'Fallback');
           const choice = [...node.children].find((c) => c.localName === 'Choice');
-          for (const c of (choice || fallback)?.children || []) this.object(el, c, ctx);
+          for (const c of (choice || fallback)?.children || []) this.object(el, c, ctx, r);
         }
         continue;
       }
@@ -676,7 +729,7 @@ class Renderer {
         case 'br':
         case 'cr':
           if (attr(node, 'type') === 'page') {
-            this.append(el, pageBreak(), ctx);
+            this.append(el, h('hr', { class: 'page-break', contenteditable: 'false' }), ctx);
             ctx.last = null;
           } else text(h('br'));
           break;
@@ -707,25 +760,30 @@ class Renderer {
           const n = this.notes[kind].length;
           const label = kind === 'footnote' ? String(n) : toRoman(n);
           const prefix = kind === 'footnote' ? 'fn' : 'en';
-          this.append(el, h('sup', { class: 'noteref' }, h('a', { href: `#${prefix}-${id}`, id: `${prefix}ref-${id}` }, label)), ctx);
+          const ref = h('sup', { class: 'noteref', contenteditable: 'false' }, h('a', { href: `#${prefix}-${id}`, id: `${prefix}ref-${id}` }, label));
+          this.mark(ref, r);
+          this.append(el, ref, ctx);
           ctx.last = null;
           break;
         }
         case 'drawing':
         case 'pict':
         case 'object':
-          this.object(el, node, ctx);
+          this.object(el, node, ctx, r);
           break;
       }
     }
   }
 
-  // Images and text boxes inside a run.
-  object(el, node, ctx) {
+  // Images and text boxes inside run r.
+  object(el, node, ctx, r) {
     const box = descendant(node, 'txbxContent', NS.w);
     if (box) {
-      const div = h('span', { class: 'textbox' });
+      const div = h('span', { class: 'textbox', contenteditable: 'false' });
+      this.locked++;
       this.blocks(div, box.children, ctx.rels);
+      this.locked--;
+      this.mark(div, r);
       this.append(el, div, ctx);
       ctx.last = null;
       return;
@@ -747,8 +805,9 @@ class Renderer {
         out.height = Math.round(num(extent.getAttribute('cy')) / EMU_PER_PX);
       }
     } else {
-      out = h('span', { class: 'image-missing', 'data-i18n': 'imageUnsupported', title: rel.target.split('/').pop() }, t('imageUnsupported'));
+      out = h('span', { class: 'image-missing', contenteditable: 'false', 'data-i18n': 'imageUnsupported', title: rel.target.split('/').pop() }, t('imageUnsupported'));
     }
+    this.mark(out, r);
     this.append(el, out, ctx);
     ctx.last = null;
   }
@@ -772,6 +831,7 @@ class Renderer {
 
   table(tbl, rels) {
     const table = h('table');
+    this.mark(table, tbl);
     // Column widths from the table grid, as in Word. They also keep the columns the same
     // width when a table continues on the next page.
     const cols = kids(child(tbl, 'tblGrid'), 'gridCol').map((c) => num(attr(c, 'w')) || 0);
@@ -784,6 +844,7 @@ class Renderer {
     const grid = []; // grid[row][column] = cell covering it, for vertical merges
     kids(tbl, 'tr').forEach((tr, r) => {
       const row = tbody.insertRow();
+      this.mark(row, tr);
       // Header rows repeat at the top of each page the table continues on.
       const header = child(child(tr, 'trPr'), 'tblHeader');
       if (header && on(header)) row.className = 'header-row';
@@ -802,6 +863,7 @@ class Renderer {
           continue;
         }
         const td = row.insertCell();
+        this.mark(td, tc);
         if (span > 1) td.colSpan = span;
         const fill = attr(child(tcPr, 'shd'), 'fill');
         if (/^[0-9a-f]{6}$/i.test(fill)) td.style.background = `#${fill.toLowerCase()}`;
@@ -823,18 +885,34 @@ class Renderer {
     for (const id of ids) {
       const li = h('li', { id: `${prefix}-${id}` });
       const note = this.noteContent[kind].get(id);
+      this.locked++;
       if (note) this.blocks(li, note.children, rels);
+      this.locked--;
       // The back link goes at the end of the note's last paragraph, not on a line of its own.
       const last = li.lastElementChild?.tagName === 'P' ? li.lastElementChild : li;
       last.querySelector(':scope > br:last-child')?.remove();
       last.append(' ', h('a', { href: `#${prefix}ref-${id}`, class: 'noteback', 'aria-label': '↩' }, '↩'));
       list.appendChild(li);
     }
-    return h('section', { class: `notes ${kind}s` }, h('hr'), list);
+    return h('section', { class: `notes ${kind}s`, contenteditable: 'false' }, h('hr'), list);
   }
 }
 
-const pageBreak = () => h('hr', { class: 'page-break' });
+const pageBreak = () => h('hr', { class: 'page-break', contenteditable: 'false' });
+
+// Index of the run that ends the complex field beginning at nodes[i], or -1 when nodes[i] does
+// not begin a field or the field does not end among these siblings.
+function fieldEnd(nodes, i) {
+  const type = (r) => (r.localName === 'r' && r.namespaceURI === NS.w ? attr(child(r, 'fldChar'), 'fldCharType') : null);
+  if (type(nodes[i]) !== 'begin') return -1;
+  let depth = 0;
+  for (let j = i; j < nodes.length; j++) {
+    const t = type(nodes[j]);
+    if (t === 'begin') depth++;
+    else if (t === 'end' && --depth === 0) return j;
+  }
+  return -1;
+}
 
 function toRoman(n) {
   const numerals = [[1000, 'm'], [900, 'cm'], [500, 'd'], [400, 'cd'], [100, 'c'], [90, 'xc'], [50, 'l'], [40, 'xl'], [10, 'x'], [9, 'ix'], [5, 'v'], [4, 'iv'], [1, 'i']];
@@ -845,19 +923,24 @@ function toRoman(n) {
 
 // ---------- Loading ----------
 
-// Opens a .docx from an ArrayBuffer. Returns { element, page, images } where element is the
-// rendered document, page the page size and margins in px, and images the blob URLs to revoke later.
+// Opens a .docx from an ArrayBuffer. Returns { element, page, images, model }: element is the
+// rendered document, page the page size and margins in px, images the blob URLs to revoke
+// later, and model the parsed package that editing changes (see DocxModel).
 async function loadDocx(buffer) {
   const pkg = new DocxPackage(readZip(buffer));
   const rootRels = await pkg.rels('');
   const main = [...rootRels.values()].find((r) => r.type === 'officeDocument')?.target || 'word/document.xml';
   const doc = await pkg.xml(main);
-  const body = doc && descendant(doc, 'body', NS.w);
-  if (!body) throw new Error('invalidFile');
+  if (!doc || !descendant(doc, 'body', NS.w)) throw new Error('invalidFile');
 
-  const rels = await pkg.rels(main);
+  const relsDoc = await pkg.xml(relsPath(main));
+  const rels = parseRels(relsDoc, main);
   const partOf = (type) => [...rels.values()].find((r) => r.type === type && !r.external)?.target;
-  const [stylesDoc, numberingDoc, themeDoc] = await Promise.all(['styles', 'numbering', 'theme'].map((type) => (partOf(type) ? pkg.xml(partOf(type)) : null)));
+  const parts = {};
+  for (const type of ['styles', 'numbering', 'theme']) {
+    const path = partOf(type);
+    parts[type] = path ? { path, doc: await pkg.xml(path) } : null;
+  }
 
   const noteParts = {};
   for (const kind of ['footnote', 'endnote']) {
@@ -877,31 +960,11 @@ async function loadDocx(buffer) {
     }
   }
 
-  const renderer = new Renderer({
-    styles: parseStyles(stylesDoc),
-    numbering: parseNumbering(numberingDoc),
-    theme: parseThemeFonts(themeDoc),
-    images,
-  });
-  for (const [kind, part] of Object.entries(noteParts)) {
-    for (const note of part.xml?.getElementsByTagNameNS(NS.w, kind) || []) {
-      if (!attr(note, 'type') || attr(note, 'type') === 'normal') renderer.noteContent[kind].set(attr(note, 'id'), note);
-    }
-  }
+  const contentTypes = await pkg.xml('[Content_Types].xml');
+  const model = new DocxModel({ buffer, pkg, main, doc, relsDoc, rels, parts, noteParts, images, contentTypes });
+  const { element } = model.render();
 
-  // Documents run left to right unless a paragraph says otherwise, also inside a right-to-left interface.
-  const article = h('article', { class: 'doc', dir: 'ltr' });
-  const base = renderer.baseRun;
-  if (base.font) article.style.fontFamily = fontStack(base.font);
-  article.style.fontSize = `${base.size || 11}pt`;
-  if (base.color) article.style.color = base.color;
-  renderer.blocks(article, body.children, rels);
-  for (const kind of ['footnote', 'endnote']) {
-    const section = renderer.notesSection(kind, noteParts[kind]?.rels || new Map());
-    if (section) article.appendChild(section);
-  }
-
-  const sect = [...body.children].reverse().find((c) => c.localName === 'sectPr');
+  const sect = [...model.body.children].reverse().find((c) => c.localName === 'sectPr');
   const size = child(sect, 'pgSz');
   const margin = child(sect, 'pgMar');
   const px = (el, name, fallback) => (num(attr(el, name)) ?? fallback) / TWIPS_PER_PX;
@@ -914,7 +977,48 @@ async function loadDocx(buffer) {
     left: px(margin, 'left', 1440),
   };
 
-  return { element: article, page, images: [...images.values()].filter((i) => i.url) };
+  return { element, page, images: [...images.values()].filter((i) => i.url), model };
+}
+
+// The parsed package: the XML of the main document and the parts around it. Editing changes
+// this XML (docx-edit.js); render() turns it into HTML again.
+class DocxModel {
+  constructor(props) {
+    Object.assign(this, props);
+    this.changedParts = new Set(); // package paths whose XML must be written on save
+  }
+
+  get body() {
+    return descendant(this.doc, 'body', NS.w);
+  }
+
+  render() {
+    const renderer = new Renderer({
+      styles: parseStyles(this.parts.styles?.doc),
+      numbering: parseNumbering(this.parts.numbering?.doc),
+      theme: parseThemeFonts(this.parts.theme?.doc),
+      images: this.images,
+    });
+    for (const [kind, part] of Object.entries(this.noteParts)) {
+      for (const note of part.xml?.getElementsByTagNameNS(NS.w, kind) || []) {
+        if (!attr(note, 'type') || attr(note, 'type') === 'normal') renderer.noteContent[kind].set(attr(note, 'id'), note);
+      }
+    }
+
+    // Documents run left to right unless a paragraph says otherwise, also inside a right-to-left interface.
+    const article = h('article', { class: 'doc', dir: 'ltr' });
+    const base = renderer.baseRun;
+    if (base.font) article.style.fontFamily = fontStack(base.font);
+    article.style.fontSize = `${base.size || 11}pt`;
+    if (base.color) article.style.color = base.color;
+    renderer.blocks(article, this.body.children, this.rels);
+    for (const kind of ['footnote', 'endnote']) {
+      const section = renderer.notesSection(kind, this.noteParts[kind]?.rels || new Map());
+      if (section) article.appendChild(section);
+    }
+    this.renderer = renderer;
+    return { element: article, renderer };
+  }
 }
 
 if (typeof module !== 'undefined') {
