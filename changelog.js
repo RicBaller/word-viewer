@@ -3,6 +3,26 @@
 
 const CHANGELOG = [
   {
+    version: '1.4.0',
+    date: '2026-09-27',
+    changes: {
+      en: [
+        'Choose the bullet or numbering style of a list, such as 1), a. or ✓, from the menu next to the list buttons.',
+        'Lists show the bullets, number formats and indents from the Word file more faithfully.',
+        'A new paragraph gets the right style at once, and normal text after a heading.',
+        'List items indented to a deeper level keep their bullet or number.',
+        'Pressing Enter in a list item with a nested list puts the cursor in the right place.',
+      ],
+      nl: [
+        'Kies de stijl van opsommingstekens of nummering van een lijst, zoals 1), a. of ✓, in het menu naast de lijstknoppen.',
+        'Lijsten tonen de opsommingstekens, nummernotaties en inspringing uit het Word-bestand getrouwer.',
+        'Een nieuwe alinea krijgt meteen de juiste stijl, en na een kop gewone tekst.',
+        'Lijstitems die dieper inspringen, houden hun opsommingsteken of nummer.',
+        'Op Enter drukken in een lijstitem met een geneste lijst zet de cursor op de juiste plek.',
+      ],
+    },
+  },
+  {
     version: '1.3.0',
     date: '2026-09-27',
     changes: {
