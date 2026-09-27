@@ -12,6 +12,8 @@ const els = {
   fileInfo: $('fileInfo'),
   pageViewBtn: $('pageViewBtn'),
   textViewBtn: $('textViewBtn'),
+  editViewBtn: $('editViewBtn'),
+  editTools: $('editTools'),
   printBtn: $('printBtn'),
   exportMenuBtn: $('exportMenuBtn'),
   closeBtn: $('closeBtn'),
@@ -26,10 +28,11 @@ const els = {
   changelogLink: $('changelogLink'),
 };
 
-// Open document: { name, element, page: size and margins in px, images: blob URLs, words }.
+// Open document: { name, element, page: size and margins in px, images: blob URLs, model: the
+// parsed package (docx.js), words, dirty: edited since it was opened or downloaded }.
 let doc = null;
 
-// Active view: 'page' (sheets of paper) or 'text' (reflowed, for reading).
+// Active view: 'page' (sheets of paper), 'text' (reflowed, for reading) or 'edit'.
 let view = 'page';
 // Contents panel starts open on wide screens.
 let showContents = window.matchMedia('(min-width: 1100px)').matches;
@@ -70,7 +73,7 @@ async function openBuffer(name, getBuffer) {
 }
 
 function readFile(file) {
-  if (!file) return;
+  if (!file || !confirmDiscard()) return;
   openBuffer(file.name, () => file.arrayBuffer());
 }
 
@@ -85,11 +88,9 @@ function openSample() {
 function openDoc(newDoc) {
   closeDoc();
   doc = newDoc;
+  doc.dirty = false;
   doc.words = countWords(doc.element.textContent);
-  doc.element.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach((el, i) => {
-    el.id ||= `heading-${i + 1}`;
-  });
-  for (const [key, value] of Object.entries(doc.page)) doc.element.style.setProperty(`--page-${key}`, `${value}px`);
+  prepareElement(doc.element);
   els.findInput.value = '';
   renderContents();
   show('viewer');
@@ -97,8 +98,21 @@ function openDoc(newDoc) {
   window.scrollTo(0, 0);
 }
 
+// Page size for the styles of the document element, which is new after each edit command.
+function prepareElement(el) {
+  for (const [key, value] of Object.entries(doc.page)) el.style.setProperty(`--page-${key}`, `${value}px`);
+}
+
+// Asks before throwing away edits that are not downloaded. True when it is fine to go on.
+function confirmDiscard() {
+  editor.active && flushEdits();
+  return !doc?.dirty || confirm(t('confirmDiscard'));
+}
+
 function closeDoc() {
   if (!doc) return;
+  stopEditing();
+  editor.doc = null;
   for (const image of doc.images) URL.revokeObjectURL(image.url);
   els.docHost.replaceChildren();
   doc = null;
@@ -132,18 +146,29 @@ async function showDocument() {
   if (doc.shown !== root) {
     doc.shown = root;
     els.docHost.replaceChildren(root);
-    // Printed pages match the pages on screen; the text view is paged by the browser.
-    const { width, height, top, right, bottom, left } = doc.page;
-    const margin = view === 'page' ? '0' : `${top}px ${right}px ${bottom}px ${left}px`;
-    printStyle.textContent = `@page { size: ${width}px ${height}px; margin: ${margin}; }`;
+    setPrintStyle();
     // Matches are ranges in the element on screen, so they are found again.
     runFind();
   }
+  if (view === 'edit' && !editor.active) startEditing(doc);
   fitPages();
   updateInfo();
 }
 
-// The element on screen: the pages in page view, the document itself in text view.
+// Printed pages match the pages on screen; the text and edit views are paged by the browser.
+function setPrintStyle() {
+  const { width, height, top, right, bottom, left } = doc.page;
+  const margin = view === 'page' ? '0' : `${top}px ${right}px ${bottom}px ${left}px`;
+  printStyle.textContent = `@page { size: ${width}px ${height}px; margin: ${margin}; }`;
+}
+
+// Page view is laid out again the next time it is shown.
+function invalidatePages() {
+  doc.pages = null;
+  doc.paging = null;
+}
+
+// The element on screen: the pages in page view, the document itself in text and edit view.
 function currentRoot() {
   return view === 'page' ? doc.pages : doc.element;
 }
@@ -161,6 +186,7 @@ function updateInfo() {
   const parts = [doc.name];
   if (view === 'page' && doc.pages) parts.push(t('pages', { n: doc.pages.children.length }));
   parts.push(t('words', { n: doc.words }));
+  if (doc.dirty) parts.push(t('unsaved'));
   els.fileInfo.textContent = parts.join(' · ');
 }
 
@@ -168,9 +194,10 @@ function updateInfo() {
 
 function render() {
   closeMenu();
-  const isText = view === 'text';
-  els.pageViewBtn.classList.toggle('active', !isText);
-  els.textViewBtn.classList.toggle('active', isText);
+  els.pageViewBtn.classList.toggle('active', view === 'page');
+  els.textViewBtn.classList.toggle('active', view === 'text');
+  els.editViewBtn.classList.toggle('active', view === 'edit');
+  els.editTools.hidden = view !== 'edit';
   els.contents.hidden = !showContents;
   els.contentsBtn.classList.toggle('active', showContents);
   els.contentsBtn.setAttribute('aria-expanded', String(showContents));
@@ -180,7 +207,10 @@ function render() {
 }
 
 function renderContents() {
-  const headings = [...doc.element.querySelectorAll('h1, h2, h3, h4, h5, h6')].filter((el) => el.textContent.trim());
+  const all = [...doc.element.querySelectorAll('h1, h2, h3, h4, h5, h6')];
+  // Ids are given again each time: editing can copy a heading, id included.
+  all.forEach((el, i) => (el.id = `heading-${i + 1}`));
+  const headings = all.filter((el) => el.textContent.trim());
   const top = Math.min(...headings.map((el) => Number(el.tagName[1])));
   els.contentsList.replaceChildren(
     ...headings.map((el) => {
@@ -212,18 +242,55 @@ els.contentsList.addEventListener('click', (e) => {
 // Links inside the document to bookmarks and notes scroll there without changing the URL.
 els.docHost.addEventListener('click', (e) => {
   const a = e.target.closest('a[href^="#"]');
-  if (!a) return;
+  if (!a || editor.active) return;
   e.preventDefault();
   document.getElementById(decodeURIComponent(a.hash.slice(1)))?.scrollIntoView({ block: 'center' });
 });
 
 function setView(v) {
+  if (v === view) return;
+  if (view === 'edit') stopEditing();
   view = v;
   render();
 }
 
 els.pageViewBtn.addEventListener('click', () => setView('page'));
 els.textViewBtn.addEventListener('click', () => setView('text'));
+els.editViewBtn.addEventListener('click', () => setView('edit'));
+
+// ---------- Editing ----------
+
+editor.onRender = (el) => {
+  prepareElement(el);
+  doc.element = el;
+  doc.shown = el;
+  els.docHost.replaceChildren(el);
+};
+editor.onChange = () => {
+  doc.dirty = editor.typing || editor.undo[editor.undo.length - 1] !== editor.cleanState;
+  doc.words = countWords(doc.element.textContent);
+  invalidatePages();
+  renderContents();
+  updateInfo();
+};
+editor.onInput = () => {
+  if (!doc.dirty) {
+    doc.dirty = true;
+    updateInfo();
+  }
+  // Find results are ranges in the text that just changed.
+  if (matches.length) {
+    clearFind();
+    updateFindCount();
+  }
+};
+attachEditor(els.docHost);
+initToolbar(els.editTools);
+
+window.addEventListener('beforeunload', (e) => {
+  if (editor.active) flushEdits();
+  if (doc?.dirty) e.preventDefault();
+});
 els.contentsBtn.addEventListener('click', () => {
   showContents = !showContents;
   render();
@@ -291,7 +358,7 @@ function goToMatch(i) {
   const range = matches[currentMatch];
   if (canHighlight) CSS.highlights.set('find-current', new Highlight(range));
   const rect = range.getBoundingClientRect();
-  const toolsBottom = document.querySelector('.doc-tools').getBoundingClientRect().bottom;
+  const toolsBottom = document.querySelector('.doc-bars').getBoundingClientRect().bottom;
   if (rect.top < toolsBottom + 8 || rect.bottom > window.innerHeight - 8) {
     window.scrollBy({ top: rect.top - window.innerHeight / 3 });
   }
@@ -441,18 +508,49 @@ async function copy(text) {
   }
 }
 
-const EXPORTS = {
-  print: () => window.print(),
-  html: () => download(toHTML(doc.element, baseName(), doc.images, lang), 'text/html;charset=utf-8', 'html'),
-  md: () => download(toMarkdown(doc.element), 'text/markdown;charset=utf-8', 'md'),
-  copyMd: () => copy(toMarkdown(doc.element)),
-  txt: () => download(toText(doc.element), 'text/plain;charset=utf-8', 'txt'),
-  copyTxt: () => copy(toText(doc.element)),
+// The .docx: the original file when nothing changed, else the edited package.
+async function downloadDocx() {
+  if (editor.active) flushEdits();
+  // Unchanged since opening or the last download: that file again.
+  const blob = doc.dirty ? await saveDocx(doc.model) : doc.saved || doc.model.buffer;
+  download(blob, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'docx');
+  doc.saved = blob;
+  doc.dirty = false;
+  if (editor.active) editor.cleanState = editor.undo[editor.undo.length - 1];
+  updateInfo();
+}
+
+// Exports read the document as it is on screen, so pending typing is written first.
+const withEdits = (fn) => () => {
+  if (editor.active) flushEdits();
+  fn();
 };
+
+const EXPORTS = {
+  print: withEdits(() => window.print()),
+  docx: () => downloadDocx().catch((err) => {
+    console.error(err);
+    showToast(t('saveFailed'));
+  }),
+  html: withEdits(() => download(toHTML(doc.element, baseName(), doc.images, lang), 'text/html;charset=utf-8', 'html')),
+  md: withEdits(() => download(toMarkdown(doc.element), 'text/markdown;charset=utf-8', 'md')),
+  copyMd: withEdits(() => copy(toMarkdown(doc.element))),
+  txt: withEdits(() => download(toText(doc.element), 'text/plain;charset=utf-8', 'txt')),
+  copyTxt: withEdits(() => copy(toText(doc.element))),
+};
+
+$('saveDocxBtn').addEventListener('click', EXPORTS.docx);
+// Ctrl+S / Cmd+S downloads the .docx while a document is open.
+document.addEventListener('keydown', (e) => {
+  if (!doc || e.key.toLowerCase() !== 's' || !(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey) return;
+  e.preventDefault();
+  EXPORTS.docx();
+});
 
 els.printBtn.addEventListener('click', EXPORTS.print);
 els.exportMenuBtn.addEventListener('click', () => {
   toggleMenu(els.exportMenuBtn, [
+    ['exportDocx', EXPORTS.docx],
     ['exportHtml', EXPORTS.html],
     ['exportMd', [['downloadFile', EXPORTS.md], ['copyClipboard', EXPORTS.copyMd]]],
     ['exportTxt', [['downloadFile', EXPORTS.txt], ['copyClipboard', EXPORTS.copyTxt]]],
@@ -469,6 +567,7 @@ els.fileInput.addEventListener('change', () => {
 els.sampleBtn.addEventListener('click', openSample);
 
 els.closeBtn.addEventListener('click', () => {
+  if (!confirmDiscard()) return;
   closeDoc();
   setStatus(null);
   show('dropzone');
@@ -504,7 +603,9 @@ if ('launchQueue' in window) {
 // ---------- Language ----------
 
 initSite(() => {
+  fillStyleOptions();
   if (doc) render();
 });
+fillStyleOptions();
 
 show('dropzone');

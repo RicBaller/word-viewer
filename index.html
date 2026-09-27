@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Word Viewer – Open DOCX Files Online, Free</title>
-  <meta name="description" content="Open and read Word documents (.docx) in your browser. Free, no sign-up and no upload: your file stays on your device. Save as PDF, HTML, Markdown or plain text.">
+  <title>Word Viewer – Open and Edit DOCX Files Online, Free</title>
+  <meta name="description" content="Open, read and edit Word documents (.docx) in your browser. Free, no sign-up and no upload: your file stays on your device. Download the edited .docx or save as PDF, HTML, Markdown or plain text.">
   <link rel="canonical" href="https://word-viewer.app/">
 
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Word Viewer">
-  <meta property="og:title" content="Word Viewer – Open DOCX Files Online, Free">
-  <meta property="og:description" content="Open Word documents in your browser. Free, no sign-up, no upload.">
+  <meta property="og:title" content="Word Viewer – Open and Edit DOCX Files Online, Free">
+  <meta property="og:description" content="Open and edit Word documents in your browser. Free, no sign-up, no upload.">
   <meta property="og:url" content="https://word-viewer.app/">
   <meta property="og:image" content="https://word-viewer.app/og-image.png">
   <meta property="og:image:width" content="1200">
@@ -42,7 +42,7 @@
         "@id": "https://word-viewer.app/#app",
         "name": "Word Viewer",
         "url": "https://word-viewer.app/",
-        "description": "Open and read Word documents (.docx) in your browser. Your file stays on your device.",
+        "description": "Open, read and edit Word documents (.docx) in your browser. Your file stays on your device.",
         "applicationCategory": "BusinessApplication",
         "operatingSystem": "Any",
         "browserRequirements": "Requires JavaScript",
@@ -54,6 +54,8 @@
           "Page view and reading view",
           "Contents to jump to any heading",
           "Find words in the whole document",
+          "Edit text, formatting, paragraph styles, lists, links and tables",
+          "Download the edited document as .docx",
           "Save as PDF, HTML, Markdown or plain text",
           "Available in 17 languages"
         ],
@@ -86,6 +88,11 @@
           },
           {
             "@type": "Question",
+            "name": "Can I edit a Word document here?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Yes. Click “Edit”, make your changes and click “Download .docx”. Text, formatting, paragraph styles, lists, links and tables can be edited. Parts that are not shown, like headers and comments, stay in the file unchanged." }
+          },
+          {
+            "@type": "Question",
             "name": "Can I open old .doc files?",
             "acceptedAnswer": { "@type": "Answer", "text": "No. Only .docx files, the format Word uses since 2007. Open a .doc file in Word or LibreOffice and save it as .docx first." }
           },
@@ -111,6 +118,7 @@
       <div class="toggle" role="group" data-i18n-aria-label="view">
         <button id="pageViewBtn" type="button" class="secondary" data-i18n="pageView">Page</button>
         <button id="textViewBtn" type="button" class="secondary" data-i18n="textView">Text</button>
+        <button id="editViewBtn" type="button" class="secondary" data-i18n="edit">Edit</button>
       </div>
       <div class="split-button">
         <button id="printBtn" type="button" data-i18n="print">Print / PDF</button>
@@ -145,6 +153,7 @@
       <ul class="features">
         <li><strong data-i18n="featPrivateTitle">Private</strong> <span data-i18n="featPrivate">Your file never leaves your device. Everything runs locally in your browser.</span></li>
         <li><strong data-i18n="featLayoutTitle">Layout</strong> <span data-i18n="featLayout">Headings, lists, tables, images, links and footnotes are shown as in Word. Switch between page view and a plain reading view.</span></li>
+        <li><strong data-i18n="featEditTitle">Edit</strong> <span data-i18n="featEdit">Change text, headings, lists and tables, then download the result as a Word document. Everything you do not change stays as it was.</span></li>
         <li><strong data-i18n="featNavTitle">Navigate</strong> <span data-i18n="featNav">Jump to any heading from the contents and find words in the whole document.</span></li>
         <li><strong data-i18n="featExportTitle">Convert</strong> <span data-i18n="featExport">Save as PDF, web page, Markdown or plain text, or copy the text to paste it anywhere.</span></li>
       </ul>
@@ -156,6 +165,8 @@
       <p data-i18n="faqUploadA">No. Your file is read and processed only in your browser. No data is sent to a server.</p>
       <h3 data-i18n="faqPdfQ">How do I convert a Word document to PDF?</h3>
       <p data-i18n="faqPdfA">Open the document and click “Print / PDF”. In the print window, choose “Save as PDF” as the printer.</p>
+      <h3 data-i18n="faqEditQ">Can I edit a Word document here?</h3>
+      <p data-i18n="faqEditA">Yes. Click “Edit”, make your changes and click “Download .docx”. Text, formatting, paragraph styles, lists, links and tables can be edited. Parts that are not shown, like headers and comments, stay in the file unchanged.</p>
       <h3 data-i18n="faqDocQ">Can I open old .doc files?</h3>
       <p data-i18n="faqDocA">No. Only .docx files, the format Word uses since 2007. Open a .doc file in Word or LibreOffice and save it as .docx first.</p>
       <h3 data-i18n="faqLayoutQ">Does the document look exactly like in Word?</h3>
@@ -163,6 +174,7 @@
     </section>
 
     <section id="viewer" class="viewer" hidden>
+      <div class="doc-bars">
       <div class="doc-tools">
         <button id="contentsBtn" type="button" class="secondary" aria-controls="contents" data-i18n="contents">Contents</button>
         <div class="find" role="search">
@@ -171,6 +183,46 @@
           <button id="findPrevBtn" type="button" class="secondary icon" data-i18n-aria-label="findPrev" aria-label="Previous match"><span aria-hidden="true">↑</span></button>
           <button id="findNextBtn" type="button" class="secondary icon" data-i18n-aria-label="findNext" aria-label="Next match"><span aria-hidden="true">↓</span></button>
         </div>
+      </div>
+      <div id="editTools" class="edit-tools" role="toolbar" data-i18n-aria-label="formatting" aria-label="Formatting" hidden>
+        <div class="tool-group">
+          <button type="button" class="secondary icon" data-cmd="undo" data-i18n-aria-label="undo" data-i18n-title="undo" aria-label="undo"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3 2 6l3 3"/><path d="M2 6h7a4 4 0 0 1 0 8H6"/></svg></button>
+          <button type="button" class="secondary icon" data-cmd="redo" data-i18n-aria-label="redo" data-i18n-title="redo" aria-label="redo"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m11 3 3 3-3 3"/><path d="M14 6H7a4 4 0 0 0 0 8h3"/></svg></button>
+        </div>
+        <div class="tool-group">
+          <select id="styleSelect" data-i18n-aria-label="paragraphStyle" data-i18n-title="paragraphStyle" aria-label="Paragraph style"></select>
+          <select id="fontSelect" data-i18n-aria-label="font" data-i18n-title="font" aria-label="Font"></select>
+          <select id="sizeSelect" class="size" data-i18n-aria-label="fontSize" data-i18n-title="fontSize" aria-label="Font size"></select>
+        </div>
+        <div class="tool-group">
+          <button type="button" class="secondary icon" data-cmd="bold" data-i18n-aria-label="bold" data-i18n-title="bold" aria-label="bold" aria-pressed="false"><b>B</b></button>
+          <button type="button" class="secondary icon" data-cmd="italic" data-i18n-aria-label="italic" data-i18n-title="italic" aria-label="italic" aria-pressed="false"><i>I</i></button>
+          <button type="button" class="secondary icon" data-cmd="underline" data-i18n-aria-label="underline" data-i18n-title="underline" aria-label="underline" aria-pressed="false"><u>U</u></button>
+          <button type="button" class="secondary icon" data-cmd="strike" data-i18n-aria-label="strike" data-i18n-title="strike" aria-label="strike" aria-pressed="false"><s>S</s></button>
+          <button type="button" class="secondary icon" data-cmd="superscript" data-i18n-aria-label="superscript" data-i18n-title="superscript" aria-label="superscript" aria-pressed="false">x<sup>2</sup></button>
+          <button type="button" class="secondary icon" data-cmd="subscript" data-i18n-aria-label="subscript" data-i18n-title="subscript" aria-label="subscript" aria-pressed="false">x<sub>2</sub></button>
+          <label class="color-tool secondary" data-i18n-title="textColor"><span aria-hidden="true">A</span><input type="color" id="colorInput" value="#000000" data-i18n-aria-label="textColor" aria-label="Text color"></label>
+          <button type="button" class="secondary icon" data-cmd="highlight" data-i18n-aria-label="highlight" data-i18n-title="highlight" aria-label="highlight" aria-haspopup="menu"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m9 2 5 5-6 6H3v-5z"/><path d="M2 15h12"/></svg></button>
+        </div>
+        <div class="tool-group">
+          <button type="button" class="secondary icon" data-cmd="alignLeft" data-i18n-aria-label="alignLeft" data-i18n-title="alignLeft" aria-label="alignLeft" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 3h12"/><path d="M2 6.5h8"/><path d="M2 10h12"/><path d="M2 13.5h8"/></svg></button>
+          <button type="button" class="secondary icon" data-cmd="alignCenter" data-i18n-aria-label="alignCenter" data-i18n-title="alignCenter" aria-label="alignCenter" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 3h12"/><path d="M4 6.5h8"/><path d="M2 10h12"/><path d="M4 13.5h8"/></svg></button>
+          <button type="button" class="secondary icon" data-cmd="alignRight" data-i18n-aria-label="alignRight" data-i18n-title="alignRight" aria-label="alignRight" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 3h12"/><path d="M6 6.5h8"/><path d="M2 10h12"/><path d="M6 13.5h8"/></svg></button>
+          <button type="button" class="secondary icon" data-cmd="justify" data-i18n-aria-label="justify" data-i18n-title="justify" aria-label="justify" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 3h12"/><path d="M2 6.5h12"/><path d="M2 10h12"/><path d="M2 13.5h12"/></svg></button>
+        </div>
+        <div class="tool-group">
+          <button type="button" class="secondary icon" data-cmd="bullets" data-i18n-aria-label="bullets" data-i18n-title="bullets" aria-label="bullets" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="3" cy="4" r="1.2"/><circle cx="3" cy="8" r="1.2"/><circle cx="3" cy="12" r="1.2"/><path d="M6 4h8"/><path d="M6 8h8"/><path d="M6 12h8"/></svg></button>
+          <button type="button" class="secondary icon" data-cmd="numbering" data-i18n-aria-label="numbering" data-i18n-title="numbering" aria-label="numbering" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><text x="0.5" y="6" font-size="5">1</text><text x="0.5" y="13" font-size="5">2</text><path d="M6 4h8"/><path d="M6 11h8"/></svg></button>
+          <button type="button" class="secondary icon" data-cmd="outdent" data-i18n-aria-label="outdent" data-i18n-title="outdent" aria-label="outdent"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M7 3h7"/><path d="M7 8h7"/><path d="M7 13h7"/><path d="M5 5 2 8l3 3"/></svg></button>
+          <button type="button" class="secondary icon" data-cmd="indent" data-i18n-aria-label="indentMore" data-i18n-title="indentMore" aria-label="indentMore"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M7 3h7"/><path d="M7 8h7"/><path d="M7 13h7"/><path d="m2 5 3 3-3 3"/></svg></button>
+        </div>
+        <div class="tool-group">
+          <button type="button" class="secondary icon" data-cmd="link" data-i18n-aria-label="link" data-i18n-title="link" aria-label="link"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M7 9a3 3 0 0 0 4 0l2-2a3 3 0 0 0-4-4l-1 1"/><path d="M9 7a3 3 0 0 0-4 0L3 9a3 3 0 0 0 4 4l1-1"/></svg></button>
+          <button type="button" class="secondary icon" data-cmd="table" data-i18n-aria-label="table" data-i18n-title="table" aria-label="table" aria-haspopup="menu"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="3" width="12" height="10" rx="1"/><path d="M2 7h12"/><path d="M2 10h12"/><path d="M6 3v10"/><path d="M10 3v10"/></svg></button>
+          <button type="button" class="secondary icon" data-cmd="pageBreak" data-i18n-aria-label="pageBreak" data-i18n-title="pageBreak" aria-label="pageBreak"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 2v4h10V2"/><path d="M3 14v-4h10v4"/><path d="M1 8h2m2 0h2m2 0h2m2 0h2" /></svg></button>
+        </div>
+        <button id="saveDocxBtn" type="button" class="save-docx" data-i18n="saveDocx">Download .docx</button>
+      </div>
       </div>
       <div class="viewer-body">
         <nav id="contents" class="contents" data-i18n-aria-label="contents" aria-label="Contents" hidden>
@@ -195,7 +247,9 @@
   <script src="site.js"></script>
   <script src="docx.js"></script>
   <script src="paginate.js"></script>
+  <script src="docx-edit.js"></script>
   <script src="export.js"></script>
+  <script src="editor.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
