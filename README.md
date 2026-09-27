@@ -6,17 +6,17 @@ Live at [word-viewer.app](https://word-viewer.app/).
 
 ## Usage
 
-Serve the folder with any static web server (for example `python3 -m http.server`) and open it in a browser. Opening `index.html` directly from disk works too, except the sample document.
+Run `npx wrangler dev` and open http://localhost:8787. That serves the files the same way as production, clean URLs included (`/changelog`). Any static web server works for the app itself, but links to `/changelog` then need `changelog.html`.
 
 - Drag a `.docx` file onto the page (or pick one with the button), or open the sample document.
 - The document shows headings, lists, tables (merged cells included), images, links, bookmarks, footnotes, endnotes and text boxes, with fonts, colors, alignment, indents and spacing. Headers, footers, comments and tracked deletions are not shown.
-- `Page` view shows paper with the page size and margins of the document; page breaks start a new sheet. `Text` view reflows the text for reading.
+- `Page` view shows paper with the page size and margins of the document. Word stores no page layout in a .docx, so `paginate.js` lays out the pages by measuring the rendered content: paragraphs and list items split between lines (at least two lines on each page), tables between rows (header rows repeat, merged rows stay together), and headings move to the next page with the text that follows. Page breaks in the document start a new page. Page counts come close to Word but can differ, because fonts such as Calibri or Aptos are often replaced by another font with other widths. On narrow screens the pages are scaled down instead of laid out again. Printing prints these pages. `Text` view reflows the text for reading.
 - `Contents` lists the headings; click one to jump to it.
 - Find (`Ctrl+F` / `Cmd+F` while a document is open) highlights every match. `Enter` and `Shift+Enter` go to the next and previous match.
 - `Print / PDF` opens the print dialog with the page size and margins of the document. The arrow next to it saves a web page (`.html`, images embedded), Markdown (`.md`) or plain text (`.txt`). Markdown and plain text can also be copied to the clipboard. Exporters live in `export.js`.
 - Old `.doc` files and password-protected documents are not supported; the app says so.
 - The interface language follows your browser settings. Pick another language in the top bar; the choice is remembered. Supported: English, Dutch, German, French, Spanish, Italian, Portuguese, Polish, Turkish, Russian, Ukrainian, Arabic (right-to-left), Hindi, Indonesian, Chinese (Simplified), Japanese and Korean. Translations live in `i18n.js`.
-- The footer links to `changelog.html`, the release history. Add new releases at the top of `CHANGELOG` in `changelog.js`.
+- The footer links to `/changelog` (`changelog.html`), the release history. Add new releases at the top of `CHANGELOG` in `changelog.js`.
 
 ## How it works
 
