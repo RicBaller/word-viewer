@@ -11,6 +11,7 @@ Run `npx wrangler dev` and open http://localhost:8787. That serves the files the
 - Drag a `.docx` file onto the page (or pick one with the button), or open the sample document.
 - The document shows headings, lists, tables (merged cells included), images, links, bookmarks, footnotes, endnotes and text boxes, with fonts, colors, alignment, indents and spacing. Headers, footers, comments and tracked deletions are not shown.
 - `Page` view shows paper with the page size and margins of the document. Word stores no page layout in a .docx, so `paginate.js` lays out the pages by measuring the rendered content: paragraphs and list items split between lines (at least two lines on each page), tables between rows (header rows repeat, merged rows stay together), and headings move to the next page with the text that follows. Page breaks in the document start a new page. Page counts come close to Word but can differ, because fonts such as Calibri or Aptos are often replaced by another font with other widths. On narrow screens the pages are scaled down instead of laid out again. Printing prints these pages. `Text` view reflows the text for reading.
+- `Edit` makes the document editable on a sheet with the width and margins of the paper. The toolbar has undo and redo, paragraph style (Normal, Title, Subtitle, Heading 1–4, Quote), font and size, bold, italic, underline, strikethrough, superscript, subscript, text color, highlight, alignment, bullets, numbering, indent, links, tables and page breaks. Word's shortcuts work: `Ctrl/Cmd+B/I/U/K/Z/Y`, `Ctrl/Cmd+Alt+1–4` for headings and `+0` for normal text, `Ctrl/Cmd+Enter` for a page break, `Ctrl/Cmd+Shift+L` for bullets, `Tab`/`Shift+Tab` to indent list items or move between table cells (in the last cell `Tab` adds a row). `Download .docx` (or `Ctrl/Cmd+S`) saves the result. The file name and top bar show when changes are not downloaded yet; closing asks first.
 - `Contents` lists the headings; click one to jump to it.
 - Find (`Ctrl+F` / `Cmd+F` while a document is open) highlights every match. `Enter` and `Shift+Enter` go to the next and previous match.
 - `Print / PDF` opens the print dialog with the page size and margins of the document. The arrow next to it saves a web page (`.html`, images embedded), Markdown (`.md`) or plain text (`.txt`). Markdown and plain text can also be copied to the clipboard. Exporters live in `export.js`.
@@ -21,6 +22,14 @@ Run `npx wrangler dev` and open http://localhost:8787. That serves the files the
 ## How it works
 
 `docx.js` reads the zip with `DecompressionStream`, parses the XML parts with `DOMParser` and builds the document as plain HTML elements (`h1`–`h6`, `p`, `ul`/`ol`, `table`, `strong`, `em`, …). Images become blob URLs. The exporters in `export.js` work on that HTML. Nothing is sent to a server.
+
+Editing keeps the XML of the package as the document and the HTML as a view of it. Every rendered paragraph, table, row, cell and run points back to its XML node (`data-x`, `data-r`).
+
+- `editor.js` handles the editing in the page. Typing and text formatting change the HTML. Enter and Backspace in lists work like in Word. After a pause of typing, the HTML is written back into the XML and an undo step is added.
+- `docx-edit.js` writes the HTML back (`commit`): a paragraph whose HTML did not change keeps its original XML untouched, including properties the viewer does not know. A changed paragraph is rebuilt from the HTML, starting from the original paragraph and run properties. Bookmarks, comment ranges and fields that span paragraphs are kept.
+- Paragraph styles, lists, alignment, indent and tables are XML operations; after them the document is rendered again. Missing built-in styles (headings, Title, List Paragraph, Table Grid, Hyperlink) and numbering definitions are added to the package, found by their built-in name, so localized style ids (`Kop1`, `Überschrift1`) are reused.
+- `saveDocx` writes the zip again: unchanged parts are copied byte for byte, changed parts are compressed with `CompressionStream`. A document that is not edited downloads as the original file.
+- Not editable: headers and footers, comments, footnote text, text boxes and images (they can be deleted). In a changed paragraph, fields such as page references become plain text, and tracked changes are accepted.
 
 Needs a current browser: Chrome/Edge 103+, Firefox 113+, Safari 16.4+. Find highlighting uses the CSS Custom Highlight API.
 
