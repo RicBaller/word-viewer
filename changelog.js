@@ -3,6 +3,24 @@
 
 const CHANGELOG = [
   {
+    version: '1.3.0',
+    date: '2026-09-27',
+    changes: {
+      en: [
+        'Start a new Word document from the start page; it opens ready for typing.',
+        'New documents use A4 paper, or Letter where that is the standard, with the font and margins Word uses.',
+        'Links between the pages also work when you open the app from your own computer.',
+        'Switching to the Edit view while pages are still being laid out no longer hides the document.',
+      ],
+      nl: [
+        'Begin een nieuw Word-document vanaf de startpagina; het opent meteen klaar om te typen.',
+        'Nieuwe documenten krijgen A4-papier, of Letter waar dat de standaard is, met het lettertype en de marges van Word.',
+        'Links tussen de pagina’s werken ook als je de app vanaf je eigen computer opent.',
+        'Overschakelen naar Bewerken terwijl de pagina’s nog worden opgedeeld, laat het document niet meer verdwijnen.',
+      ],
+    },
+  },
+  {
     version: '1.2.0',
     date: '2026-09-27',
     changes: {
